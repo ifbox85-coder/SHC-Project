@@ -1,0 +1,1198 @@
+import React, { useState, useEffect, useContext } from 'react';
+import { ThemeContext } from '../App';
+import { supabase } from '../configs/database';
+import { useNavigate } from 'react-router-dom';
+
+const MasterData = () => {
+  const theme = useContext(ThemeContext);
+  const [activeTab, setActiveTab] = useState('layanan'); 
+  const [services, setServices] = useState([]);
+  const userProfile = JSON.parse(localStorage.getItem('user_profile') || '{}');
+  const [staffList, setStaffList] = useState([]);
+  const [diagnoses, setDiagnoses] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [selectedId, setSelectedId] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showTrash, setShowTrash] = useState(false);
+  const [showStaffTrash, setShowStaffTrash] = useState(false);
+  const navigate = useNavigate();
+
+  // State untuk Staff Form
+  const [staffForm, setStaffForm] = useState({ 
+    id: '', 
+    name: '', 
+    access_menus: [],
+  });
+
+  // State untuk Ruangan (Logistik Ruang Tindakan)
+  const [rooms, setRooms] = useState([]);
+  const [roomForm, setRoomForm] = useState({ 
+    id: null,
+    name: '', 
+    description: '', 
+    is_active: true 
+  });
+
+  // State untuk Shift Kerja
+  const [shifts, setShifts] = useState([]);
+  const [shiftForm, setShiftForm] = useState({
+    id: null,
+    name: '',
+    start_time: '09:00',
+    end_time: '17:00'
+  });
+
+  // State untuk Diagnosis (Sheet Terpisah)
+  const [diagnosisForm, setDiagnosisForm] = useState({
+    id: null,
+    code: '',
+    name: '',
+    description: ''
+  });
+
+  // New states for deactivate feature
+  const [showDeactivateModal, setShowDeactivateModal] = useState(false);
+  const [selectedStaffId, setSelectedStaffId] = useState(null);
+  const [selectedStaffName, setSelectedStaffName] = useState('');
+  const [showInactiveUsers, setShowInactiveUsers] = useState(false);
+
+  // State untuk input tarif baru
+  const [tarif, setTarif] = useState({
+    kode: '',
+    nama: '',
+    tipe: 'Treatment',
+    nilaiBeli: 0,
+    jasaMedis: 0,
+    jasaTerapis: 0,
+    profitKlinik: 0,
+    nilaiJual: 0,
+    stok: 0,
+    expired_at: '' // New field
+  });
+
+  const availableMenus = [
+    { id: 'input-pasien', label: 'Input Pasien' },
+    { id: 'registrasi', label: 'Registrasi & TTV' },
+    { id: 'konsultasi', label: 'Konsultasi Dokter' },
+    { id: 'treatment', label: 'Treatment Terapis' },
+    { id: 'kasir', label: 'Kasir' },
+    { id: 'personalia', label: 'Personalia (SDM)' },
+    { id: 'logistik', label: 'Logistik & Stok' },
+    { id: 'keuangan', label: 'Keuangan' },
+    { id: 'crm', label: 'CRM & Reminder' },
+    { id: 'presensi', label: 'Presensi Pegawai' },
+    { id: 'master', label: 'Master Data' },
+    { id: 'manajemen', label: 'Manajemen' },
+    { id: 'settings', label: 'Settings' },
+  ];
+
+  useEffect(() => {
+    if (activeTab === 'layanan') fetchServices();
+    if (activeTab === 'user') fetchStaff();
+    if (activeTab === 'ruangan') fetchRooms();
+    if (activeTab === 'diagnosis') fetchDiagnoses(); 
+    if (activeTab === 'shift') fetchShifts();
+    
+    if (!selectedId && activeTab === 'layanan' && activeTab !== 'diagnosis') {
+      generateAutoCode(tarif.tipe);
+    }
+  }, [selectedId, showTrash, activeTab, showInactiveUsers, showStaffTrash]);
+
+  const fetchRooms = async () => {
+    setIsLoading(true);
+    const { data, error } = await supabase
+      .from('rooms')
+      .select('*')
+      .order('name', { ascending: true });
+    
+    if (error) {
+      // Error rooms
+    } else {
+      setRooms(data || []);
+    }
+    setIsLoading(false);
+  };
+
+  const fetchShifts = async () => {
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase.from('shifts').select('*').order('start_time', { ascending: true });
+      if (error) throw error;
+      setShifts(data || []);
+    } catch (err) {
+      // Error shifts
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const fetchServices = async () => {
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('services')
+        .select('*')
+        .or(showTrash ? 'is_deleted.eq.true' : 'is_deleted.eq.false,is_deleted.is.null')
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+
+      if (data) {
+        // Filter lokal: Jasa/Produk/Treatment tampil di tab Layanan, Diagnosis dipisahkan
+        const onlyLayanan = data.filter(s => {
+          const type = s.type?.toLowerCase() || '';
+          return type !== 'diagnosis';
+        });
+        setServices(onlyLayanan);
+      }
+    } catch (err) {
+      // Error services
+      alert("Gagal mengambil data layanan: " + err.message);
+    } finally {
+    setIsLoading(false);
+    }
+  };
+
+  const fetchDiagnoses = async () => {
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('diagnosis')
+        .select('*')
+        .or(showTrash ? 'is_deleted.eq.true' : 'is_deleted.eq.false,is_deleted.is.null')
+        .order('name', { ascending: true });
+      
+      if (error) throw error;
+      
+      setDiagnoses(data || []);
+    } catch (err) {
+      // Error diagnoses
+      alert("Gagal memuat diagnosis: " + err.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Filter lokal untuk memisahkan list
+  const filteredServices = services; // services sudah difilter di fetchServices
+
+  const fetchStaff = async () => {
+    let query = supabase
+      .from('staff')
+      .select('*')
+      .eq('is_deleted', showStaffTrash)
+      .order('is_active', { ascending: false })
+      .order('name', { ascending: true });
+    
+    if (!showInactiveUsers && !showStaffTrash) {
+      query = query.eq('is_active', true);
+    }
+    
+    const { data } = await query;
+    if (data) {
+      // Sembunyikan superadmin dari daftar hak akses
+      setStaffList(data.filter(s => s.id !== 'superadmin'));
+    }
+  };
+
+  // Fungsi bantu untuk mendapatkan kode berikutnya (Tanpa update state)
+  const getNextAvailableCode = async (tipe) => {
+    const prefix = tipe === 'Treatment' ? 'T' : tipe === 'Produk' ? 'P' : tipe === 'Jasa' ? 'J' : 'D';
+    const { data } = await supabase
+      .from('services')
+      .select('code')
+      .ilike('code', `${prefix}-%`)
+      .order('code', { ascending: false })
+      .limit(1);
+
+    let nextNum = 1;
+    if (data && data.length > 0 && data[0].code) {
+      const parts = data[0].code.split('-');
+      const lastNum = parseInt(parts[parts.length - 1]);
+      if (!isNaN(lastNum)) nextNum = lastNum + 1;
+    }
+    return `${prefix}-${nextNum.toString().padStart(3, '0')}`;
+  };
+
+  const generateAutoCode = async (tipe) => {
+    // Jika sedang dalam mode EDIT, jangan ubah kode/SKU yang sudah ada
+    if (selectedId) {
+      setTarif(prev => ({ ...prev, tipe }));
+      return;
+    }
+    try {
+      const newCode = await getNextAvailableCode(tipe);
+      setTarif(prev => ({ ...prev, kode: newCode, tipe }));
+    } catch (err) {
+      console.error("Error generating code:", err);
+    }
+  };
+
+  // Fungsi menghitung Nilai Jual otomatis (Beli + Jasa + Profit)
+  const hitungTotal = (updatedFields) => {
+    const newTarif = { ...tarif, ...updatedFields };
+    // Nilai jual dihitung dari Jasa Terapis STANDAR agar tarif ke pasien tetap sama.
+    // Jasa Senior adalah variabel internal yang akan memotong profit klinik di laporan.
+    const total = Number(newTarif.nilaiBeli) + Number(newTarif.jasaMedis) + 
+                  Number(newTarif.jasaTerapis) + Number(newTarif.profitKlinik);
+    setTarif({ ...newTarif, nilaiJual: total });
+  };
+
+  const handleSimpan = async () => {
+    if (!tarif.nama) return alert("Nama item wajib diisi");
+
+    const executeSave = async (retryCount = 0) => {
+      setIsLoading(true);
+      try {
+        // Cek duplikasi Nama sebelum lanjut
+        const { data: existingName } = await supabase
+          .from('services')
+          .select('id')
+          .eq('name', tarif.nama)
+          .eq('type', tarif.tipe)
+          .neq('id', selectedId || '00000000-0000-0000-0000-000000000000')
+          .maybeSingle();
+
+        if (existingName) {
+          setIsLoading(false);
+          return alert(`Nama "${tarif.nama}" sudah ada di kategori ${tarif.tipe}!`);
+        }
+
+        // GENERATE KODE TEPAT SAAT SIMPAN (Late Binding)
+        let currentCode = tarif.kode;
+        if (!selectedId) {
+          currentCode = await getNextAvailableCode(tarif.tipe);
+        }
+
+        const payload = {
+          code: currentCode,
+          name: tarif.nama,
+          type: tarif.tipe,
+          purchase_price: tarif.nilaiBeli,
+          doctor_fee: tarif.jasaMedis,
+          therapist_fee: tarif.jasaTerapis,
+          clinic_profit: tarif.profitKlinik,
+          selling_price: tarif.nilaiJual,
+          stock: tarif.stok
+        };
+
+        const { error } = selectedId 
+          ? await supabase.from('services').update(payload).eq('id', selectedId)
+          : await supabase.from('services').insert([payload]);
+
+        if (error) {
+          // Jika error DUPLICATE CODE (23505) dan item baru, coba lagi otomatis
+          if (error.code === '23505' && !selectedId && retryCount < 5) {
+            return executeSave(retryCount + 1);
+          }
+          throw error;
+        }
+
+        await supabase.from('activity_logs').insert([{
+          staff_id: userProfile.id || 'SYSTEM',
+          action: selectedId ? 'UPDATE_MASTER' : 'INSERT_MASTER',
+          description: `${selectedId ? 'Memperbarui' : 'Menambah'} item master: ${tarif.nama} (${currentCode})`
+        }]);
+
+      alert("Data berhasil disimpan!");
+      resetForm();
+      fetchServices();
+    } catch (err) {
+      if (err.message?.includes('row-level security policy')) {
+        alert("Gagal Simpan: Izin akses database ditolak (RLS) untuk tabel 'services'.\n\nPastikan Anda sudah menjalankan SQL Policy INSERT & UPDATE di Dashboard Supabase.");
+      } else {
+        alert("Gagal menyimpan: " + err.message);
+      }
+    } finally {
+      setIsLoading(false);
+    }
+    };
+
+    executeSave();
+  };
+
+  const handleSimpanRoom = async () => {
+    if (!roomForm.name) return alert("Nama ruangan wajib diisi");
+    setIsLoading(true);
+    try {
+      const { error } = await supabase.from('rooms').upsert({
+        id: roomForm.id || undefined,
+        name: roomForm.name,
+        description: roomForm.description,
+        is_active: roomForm.is_active 
+      });
+      if (error) {
+        // Error room save
+        return alert(`Gagal Simpan: Izin akses database ditolak (RLS). Pastikan Policy di Supabase sudah diatur ke 'public'.\n\nDetail: ${error.message}`);
+      }
+      alert("Data Ruangan Berhasil Disimpan!");
+      setRoomForm({ id: null, name: '', description: '', is_active: true });
+      fetchRooms();
+    } catch (err) {
+      alert("Gagal menyimpan data ruangan. Periksa koneksi atau kebijakan RLS: " + err.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDeleteStaff = async (id) => {
+    if (!window.confirm("Pindahkan pegawai ke sampah? Akses login akan dinonaktifkan.")) return;
+    try {
+      const { error } = await supabase
+        .from('staff')
+        .update({ is_deleted: true, is_active: false })
+        .eq('id', id);
+      if (error) throw error;
+      fetchStaff();
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  const handleRestoreStaff = async (id) => {
+    try {
+      const { error } = await supabase
+        .from('staff')
+        .update({ is_deleted: false, is_active: true })
+        .eq('id', id);
+      if (error) throw error;
+      alert("Pegawai berhasil dikembalikan!");
+      fetchStaff();
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  const handlePermanentDeleteStaff = async (id) => {
+    if (!window.confirm("Hapus pegawai ini secara PERMANEN? Tindakan ini tidak dapat dibatalkan.")) return;
+    
+    setIsLoading(true);
+    try {
+      // Cek relasi transaksi di berbagai tabel
+      const checks = [
+        { table: 'billings', col: 'staff_id', label: 'Billing/Kasir' },
+        { table: 'encounters', col: 'assigned_staff_id', label: 'Pendaftaran/Konsultasi' },
+        { table: 'attendance', col: 'staff_id', label: 'Presensi' },
+        { table: 'expenses', col: 'staff_id', label: 'Keuangan' }
+      ];
+
+      let hasUsage = false;
+      for (const check of checks) {
+        const { count, error } = await supabase
+          .from(check.table)
+          .select('*', { count: 'exact', head: true })
+          .eq(check.col, id);
+        
+        if (error) throw error;
+        if (count > 0) {
+          hasUsage = true;
+          break;
+        }
+      }
+
+      if (hasUsage) {
+        alert("Pegawai ini tidak bisa dihapus permanen karena sudah memiliki riwayat aktivitas (medis/transaksi) di sistem. Silakan biarkan di sampah atau non-aktifkan saja.");
+      } else {
+        const { error } = await supabase.from('staff').delete().eq('id', id);
+        if (error) throw error;
+        alert("Pegawai berhasil dihapus permanen.");
+        fetchStaff();
+      }
+    } catch (err) {
+      alert("Gagal hapus permanen: " + err.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSimpanShift = async () => {
+    if (!shiftForm.name) return alert("Nama shift wajib diisi");
+    setIsLoading(true);
+    try {
+      const { error } = await supabase
+        .from('shifts')
+        .upsert({
+          id: shiftForm.id || undefined,
+          name: shiftForm.name,
+          start_time: shiftForm.start_time,
+          end_time: shiftForm.end_time
+        });
+
+      if (error) throw error;
+      alert(shiftForm.id ? "Shift Berhasil Diperbarui!" : "Shift Berhasil Disimpan!");
+      setShiftForm({ id: null, name: '', start_time: '09:00', end_time: '17:00' });
+      fetchShifts();
+    } catch (err) {
+      alert(err.message);
+    } finally { setIsLoading(false); }
+  };
+
+  const handleDeleteShift = async (id) => {
+    if (!window.confirm("Hapus shift ini?")) return;
+    setIsLoading(true);
+    try {
+      const { error } = await supabase
+        .from('shifts')
+        .delete()
+        .eq('id', id);
+      if (error) throw error;
+      fetchShifts();
+    } catch (err) {
+      alert(err.message);
+    } finally { setIsLoading(false); }
+  };
+
+  const handleToggleRoomActive = async (roomId, currentActive) => {
+    const confirmMsg = currentActive ? "Non-aktifkan ruangan ini?" : "Aktifkan kembali ruangan ini?";
+    if (!window.confirm(confirmMsg)) return;
+
+    try {
+      const { error } = await supabase
+        .from('rooms')
+        .update({ is_active: !currentActive })
+        .eq('id', roomId);
+      if (error) throw error;
+      fetchRooms();
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  const handleSimpanDiagnosis = async () => {
+    if (!diagnosisForm.code || !diagnosisForm.name) return alert("Kode (ICD-10) dan Nama Diagnosis wajib diisi");
+    
+    // Validasi format standar ICD-10 (Huruf diikuti angka, opsional titik)
+    const icd10Regex = /^[A-Z][0-9][0-9A-Z]?(\.[0-9A-Z]{1,4})?$/;
+    if (!icd10Regex.test(diagnosisForm.code)) {
+      return alert("Format Kode ICD-10 tidak valid! Gunakan format standar seperti L70.0, A00, atau B20.1");
+    }
+
+    setIsLoading(true);
+    try {
+      const payload = {
+        code: diagnosisForm.code,
+        name: diagnosisForm.name,
+        description: diagnosisForm.description
+      };
+
+      const { error } = diagnosisForm.id 
+        ? await supabase.from('diagnosis').update(payload).eq('id', diagnosisForm.id)
+        : await supabase.from('diagnosis').insert([payload]);
+
+      if (error) throw error;
+      alert("Data Diagnosis Berhasil Disimpan!");
+      setDiagnosisForm({ id: null, code: '', name: '', description: '' });
+      fetchDiagnoses();
+    } catch (err) { 
+      // Error diagnosis
+      if (err.message?.includes('row-level security policy')) {
+        alert("Gagal Simpan: Izin akses database ditolak (RLS) untuk tabel 'diagnosis'.\n\nPastikan Anda sudah menjalankan SQL Policy di Dashboard Supabase agar tabel ini bisa diakses.");
+      } else {
+        alert("Gagal menyimpan diagnosis: " + err.message);
+      }
+    } finally { setIsLoading(false); }
+  };
+
+  const handleDeleteDiagnosis = async (id) => {
+    if (!window.confirm("Hapus diagnosis ini?")) return;
+    setIsLoading(true);
+    try {
+      const { error } = await supabase
+        .from('diagnosis')
+        .update({ is_deleted: true })
+        .eq('id', id);
+      if (error) throw error;
+      fetchDiagnoses();
+    } catch (err) {
+      if (err.message?.includes('row-level security policy')) {
+        alert("Gagal Hapus: Izin akses database ditolak (RLS).");
+      } else {
+        alert(err.message);
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSimpanHakAkses = async () => {
+    if (!staffForm.id) return alert("Pilih pegawai terlebih dahulu");
+    setIsLoading(true);
+    try {
+      const { error } = await supabase.from('staff').update({
+        access_menus: staffForm.access_menus
+      }).eq('id', staffForm.id);
+
+      if (error) throw error;
+      alert("Hak Akses Berhasil Diperbarui!");
+      setStaffForm({ id: '', name: '', access_menus: [] });
+      fetchStaff();
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // New: Toggle active/inactive
+  const handleToggleActive = async (staffId, currentActive) => {
+    if (currentActive) {
+      // Deactivate - show reason modal
+      setSelectedStaffId(staffId);
+      setSelectedStaffName(staffList.find(s => s.id === staffId)?.name || '');
+      setShowDeactivateModal(true);
+    } else {
+      // Reactivate - no reason needed
+      const { error } = await supabase
+        .from('staff')
+        .update({ 
+          is_active: true, 
+          status_reason: null, 
+          deactivated_at: null 
+        })
+        .eq('id', staffId);
+      if (error) alert('Error: ' + error.message);
+      else {
+        alert('User diaktifkan kembali!');
+        fetchStaff();
+      }
+    }
+  };
+
+  const confirmDeactivate = async (reason) => {
+    if (!reason) return alert('Pilih alasan!');
+    const { error } = await supabase
+      .from('staff')
+      .update({ 
+        is_active: false, 
+        status_reason: reason,
+        deactivated_at: new Date().toISOString()
+      })
+      .eq('id', selectedStaffId);
+    if (error) alert('Error: ' + error.message);
+    else {
+      alert(`User dinonaktifkan: ${reason}`);
+      setShowDeactivateModal(false);
+      fetchStaff();
+    }
+  };
+
+  const toggleMenuAccess = (menuId) => {
+    const current = staffForm.access_menus || [];
+    if (current.includes(menuId)) {
+      setStaffForm({ ...staffForm, access_menus: current.filter(m => m !== menuId) });
+    } else {
+      setStaffForm({ ...staffForm, access_menus: [...current, menuId] });
+    }
+  };
+
+  const handleEdit = (item) => {
+    setSelectedId(item.id);
+    setTarif({
+      kode: item.code || '',
+      nama: item.name,
+      tipe: item.type,
+      nilaiBeli: item.purchase_price || 0,
+      jasaMedis: item.doctor_fee || 0,
+      jasaTerapis: item.therapist_fee || 0,
+      profitKlinik: item.clinic_profit || 0,
+      nilaiJual: item.selling_price || 0,
+      stok: item.stock || 0
+    });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm("Pindahkan item ke sampah? Item tidak akan tampil di menu tindakan.")) return;
+    try {
+      const { error } = await supabase
+        .from('services')
+        .update({ is_deleted: true })
+        .eq('id', id);
+      if (error) throw error;
+
+      await supabase.from('activity_logs').insert([{
+        staff_id: userProfile.id || 'SYSTEM',
+        action: 'DELETE_MASTER',
+        description: `Memindahkan item master ke sampah (ID: ${id})`
+      }]);
+
+      fetchServices();
+    } catch (err) {
+      if (err.message?.includes('row-level security policy')) {
+        alert("Gagal Hapus: Izin akses database ditolak (RLS).");
+      } else {
+        alert(err.message);
+      }
+    }
+  };
+
+  const handleRestore = async (id) => {
+    try {
+      const targetTable = activeTab === 'diagnosis' ? 'diagnosis' : 'services';
+      const { error } = await supabase
+        .from(targetTable)
+        .update({ is_deleted: false })
+        .eq('id', id);
+      if (error) throw error;
+      alert("Item berhasil dikembalikan!");
+      if (activeTab === 'layanan') fetchServices();
+      else fetchDiagnoses();
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  const resetForm = () => {
+    setSelectedId(null);
+    const defaultTipe = 'Treatment';
+    setTarif({ kode: '', nama: '', tipe: defaultTipe, nilaiBeli: 0, jasaMedis: 0, jasaTerapis: 0, profitKlinik: 0, nilaiJual: 0, stok: 0, expired_at: '' });
+    generateAutoCode(defaultTipe);
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50 pb-10">
+      {/* Header & Tab Navigation */}
+      <div className="p-4 text-white shadow-md" style={{ backgroundColor: theme.primaryColor }}>
+        <div className="flex items-center mb-3">
+          <button onClick={() => navigate('/dashboard')} className="mr-3 text-2xl active:scale-90 transition-transform">←</button>
+          <h2 className="font-bold text-lg">Master Data & Tarif</h2>
+        </div>
+        <div className="flex gap-4 overflow-x-auto no-scrollbar text-sm">
+          {[
+            { id: 'layanan', label: 'Layanan/Produk' },
+            { id: 'diagnosis', label: 'Diagnosis' },
+            { id: 'user', label: 'Hak Akses' },
+            { id: 'shift', label: 'Shift Kerja' },
+            { id: 'ruangan', label: 'Ruangan' }
+          ].map((tab) => (
+            <button 
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`pb-1 whitespace-nowrap ${activeTab === tab.id ? 'border-b-2 border-white font-bold' : 'opacity-70'}`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="p-4 max-w-2xl mx-auto">
+        {activeTab === 'layanan' && (
+          <div className="space-y-4">
+            {/* Form Input Tarif */}
+            <div className={`bg-white p-6 rounded-2xl shadow-sm space-y-4 border-2 transition-all ${selectedId ? 'border-blue-400' : 'border-transparent'}`}>
+              <div className="flex justify-between items-center">
+                <h3 className="font-bold text-gray-700">{selectedId ? 'Edit Item Master' : 'Tambah Layanan / Produk'}</h3>
+                {selectedId && <button onClick={resetForm} className="text-xs text-red-500 font-bold uppercase">Batal Edit</button>}
+              </div>
+              
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="text-[10px] font-bold text-gray-400 uppercase">Kode/SKU</label>
+                  <input 
+                    type="text" 
+                    readOnly 
+                    className="w-full p-3 border rounded-xl mt-1 text-sm font-mono uppercase bg-gray-50 italic text-gray-500" 
+                    value={tarif.kode} 
+                    placeholder="Otomatis..." 
+                  />
+                </div>
+                <div className="col-span-1">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase">Nama Produk/Tindakan</label>
+                  <input type="text" className="w-full p-3 border rounded-xl mt-1 text-sm" value={tarif.nama} onChange={(e) => setTarif({...tarif, nama: e.target.value})} />
+                </div>
+                <div>
+                  <label className="text-[10px] font-bold text-gray-400 uppercase">Tipe</label>
+                  <select className="w-full p-3 border rounded-xl mt-1 text-sm bg-white" value={tarif.tipe} onChange={(e) => generateAutoCode(e.target.value)}>
+                    <option value="Treatment">Treatment</option>
+                    <option value="Produk">Produk</option>
+                    <option value="Jasa">Jasa</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-bold text-gray-500">Nilai Beli (HPP)</label>
+                  <input type="number" className="w-full p-3 border rounded-xl mt-1 bg-gray-50" value={tarif.nilaiBeli} onChange={(e) => hitungTotal({ nilaiBeli: e.target.value })} />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-gray-500">Jasa Medis (Dokter)</label>
+                  <input type="number" className="w-full p-3 border rounded-xl mt-1 bg-gray-50" value={tarif.jasaMedis} onChange={(e) => hitungTotal({ jasaMedis: e.target.value })} />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-gray-500">Jasa Terapis</label>
+                  <input type="number" className="w-full p-3 border rounded-xl mt-1 bg-gray-50" value={tarif.jasaTerapis} onChange={(e) => hitungTotal({ jasaTerapis: e.target.value })} />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-gray-500">Keuntungan Klinik</label>
+                  <input type="number" className="w-full p-3 border rounded-xl mt-1 bg-gray-50" value={tarif.profitKlinik} onChange={(e) => hitungTotal({ profitKlinik: e.target.value })} />
+                </div>
+                {tarif.tipe === 'Produk' && (
+                  <div>
+                    <label className="text-xs font-bold text-gray-500">Stok Awal</label>
+                    <input type="number" className="w-full p-3 border rounded-xl mt-1 bg-gray-50" value={tarif.stok} onChange={(e) => setTarif({...tarif, stok: e.target.value})} />
+                  </div>
+                )}
+                {tarif.tipe === 'Produk' && (
+                  <div>
+                    <label className="text-xs font-bold text-gray-500">Tanggal Kedaluwarsa</label>
+                    <input type="date" className="w-full p-3 border rounded-xl mt-1 bg-gray-50" 
+                      value={tarif.expired_at} onChange={(e) => setTarif({...tarif, expired_at: e.target.value})} 
+                    />
+                  </div>
+                )}
+              </div>
+
+              {/* Summary Nilai Jual */}
+              <div className="p-4 rounded-xl flex justify-between items-center" style={{ backgroundColor: `${theme.primaryColor}15` }}>
+                <span className="font-bold text-gray-700">ESTIMASI NILAI JUAL:</span>
+                <span className="text-xl font-black" style={{ color: theme.primaryColor }}>
+                  Rp {tarif.nilaiJual.toLocaleString()}
+                </span>
+              </div>
+
+              <button
+                onClick={handleSimpan}
+                disabled={isLoading}
+                className="w-full py-4 rounded-xl text-white font-bold shadow-lg uppercase tracking-wider"
+                style={{ backgroundColor: isLoading ? '#ccc' : theme.primaryColor }}
+              >
+                {isLoading ? 'Memproses...' : (selectedId ? 'Simpan Perubahan' : 'Simpan Ke Master')}
+              </button>
+            </div>
+
+            {/* List Data Master dengan Pencarian & Grouping */}
+            <div className="space-y-3">
+              <div className="flex justify-between items-center px-1">
+                <h3 className="font-black text-gray-400 text-[10px] uppercase tracking-widest">
+                  {showTrash ? '🗑️ Sampah / Item Non-Aktif' : '📋 Daftar Item Aktif'}
+                </h3>
+                <button 
+                  onClick={() => setShowTrash(!showTrash)}
+                  className={`text-[10px] font-bold px-3 py-1 rounded-full border transition-all ${showTrash ? 'bg-orange-500 text-white border-transparent' : 'text-gray-400 border-gray-200'}`}
+                >
+                  {showTrash ? 'LIHAT AKTIF' : 'LIHAT SAMPAH'}
+                </button>
+              </div>
+
+              {/* Search Bar */}
+              <input 
+                type="text" 
+                placeholder="Cari Nama atau Kode SKU..." 
+                className="w-full p-3 border border-gray-200 rounded-xl text-xs outline-none focus:ring-1 focus:border-gold"
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+
+              <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+               <table className="w-full text-left text-sm">
+                  <thead className="bg-gray-50 text-gray-500 uppercase text-[10px]">
+                    <tr>
+                      <th className="p-3">Item</th>
+                      <th className="p-3 text-right">Nilai Jual</th>
+                      <th className="p-3 text-center">Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {/* Menampilkan kategori baku, dan kategori lain yang mungkin ada di DB */}
+                    {['Treatment', 'Produk', 'Jasa', 'Lainnya'].map(category => {
+                      const filteredItems = filteredServices.filter(s => 
+                        (category === 'Lainnya' 
+                          ? (!s.type || !['treatment', 'produk', 'jasa'].includes(s.type.toLowerCase()))
+                          : s.type?.toLowerCase() === category.toLowerCase()
+                        ) && 
+                        (
+                          (s.name?.toLowerCase() || "").includes(searchQuery.toLowerCase()) || 
+                          (s.code?.toLowerCase() || "").includes(searchQuery.toLowerCase())
+                        )
+                      );
+                      
+                      if (filteredItems.length === 0) return null;
+
+                      return (
+                        <React.Fragment key={category}>
+                          <tr className="bg-gray-50/50">
+                            <td colSpan="3" className="px-3 py-1 text-[9px] font-black text-gold uppercase tracking-tighter">{category}</td>
+                          </tr>
+                          {filteredItems.map((item) => (
+                            <tr key={item.id} className="hover:bg-gray-50 transition-colors">
+                              <td className="p-3">
+                                <div className="font-semibold text-xs text-gray-800">{item.name}</div>
+                                <div className="text-[9px] font-mono text-gray-400">{item.code}</div>
+                              </td>
+                              <td className="p-3 text-right font-bold text-xs text-green-600">Rp {Number(item.selling_price).toLocaleString()}</td>
+                              <td className="p-3 text-center">
+                                <div className="flex justify-center gap-3">
+                                  {showTrash ? (
+                                    <button onClick={() => handleRestore(item.id)} className="text-green-500 font-bold text-[10px] uppercase">Restore</button>
+                                  ) : (
+                                    <>
+                                      <button onClick={() => handleEdit(item)} className="text-blue-500 font-bold text-[10px] uppercase">Edit</button>
+                                      <button onClick={() => handleDelete(item.id)} className="text-red-400 font-bold text-[10px] uppercase">Hapus</button>
+                                    </>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </React.Fragment>
+                      );
+                    })}
+                    {(services.length === 0 && !isLoading) && (
+                      <tr>
+                        <td colSpan="3" className="p-10 text-center text-gray-400 text-xs italic">Tidak ada data ditemukan.</td>
+                      </tr>
+                    )}
+                  </tbody>
+               </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'user' && (
+          <div className="space-y-6">
+            <div className="bg-white p-6 rounded-2xl shadow-sm space-y-6">
+              <div className="flex justify-between items-center">
+                <h3 className="font-bold text-gray-700 uppercase text-sm tracking-wider">Pengaturan Hak Akses</h3>
+                {staffForm.id && <span className="text-xs bg-blue-100 text-blue-600 px-3 py-1 rounded-full font-bold">Pegawai: {staffForm.name}</span>}
+              </div>
+
+              <div className={`bg-gray-50 p-4 rounded-2xl space-y-3 transition-opacity ${!staffForm.id ? 'opacity-30 pointer-events-none' : ''}`}>
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Akses Menu Aplikasi</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {availableMenus.map(m => (
+                    <label key={m.id} className="flex items-center gap-2 p-2 bg-white rounded-xl border border-gray-100 cursor-pointer shadow-sm active:scale-95 transition-transform">
+                      <input 
+                        type="checkbox" 
+                        className="w-4 h-4 accent-gold rounded"
+                        checked={staffForm.access_menus?.includes(m.id)}
+                        onChange={() => toggleMenuAccess(m.id)}
+                      />
+                      <span className="text-[9px] font-bold text-gray-600 uppercase">{m.label}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+              
+              <button 
+                onClick={handleSimpanHakAkses} 
+                disabled={isLoading || !staffForm.id} 
+                className="w-full py-4 rounded-xl text-white font-bold shadow-md uppercase tracking-wider disabled:bg-gray-300" 
+                style={{ backgroundColor: !staffForm.id ? '#ccc' : theme.primaryColor }}
+              >
+                {isLoading ? 'MEMPROSES...' : 'SIMPAN PERUBAHAN AKSES'}
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <div className="flex justify-between items-center px-1">
+                <h3 className="font-black text-gray-400 text-[10px] uppercase tracking-widest">
+                  {showStaffTrash ? '🗑️ Sampah Pegawai' : '📋 Daftar Pegawai Aktif'}
+                </h3>
+                <button 
+                  onClick={() => setShowStaffTrash(!showStaffTrash)}
+                  className={`text-[10px] font-bold px-3 py-1 rounded-full border transition-all ${showStaffTrash ? 'bg-orange-500 text-white border-transparent' : 'text-gray-400 border-gray-200'}`}
+                >
+                  {showStaffTrash ? 'LIHAT AKTIF' : 'LIHAT SAMPAH'}
+                </button>
+              </div>
+
+              <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+              <table className="w-full text-left text-sm">
+                <thead className="bg-gray-50 text-gray-400 uppercase font-black">
+                  <tr>
+                    <th className="p-3">Pegawai</th>
+                    <th className="p-3">Role</th>
+                    <th className="p-3 text-center">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {staffList.map((s) => (
+                    <tr key={s.id} className="hover:bg-gray-50 transition-colors">
+                      <td className="p-3">
+                        <div className="flex items-center gap-2">
+                          <p className="font-bold text-gray-800">{s.name}</p>
+                          {s.is_senior && (
+                            <span className="text-[8px] bg-blue-600 text-white px-1.5 py-0.5 rounded-full font-black">
+                              SENIOR (+Rp {(s.senior_bonus || 0).toLocaleString()})
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[10px] font-mono text-gray-400">{s.id}</p>
+                      </td>
+                      <td className="p-3 font-medium uppercase text-[10px]">{s.role}</td>
+                      <td className="p-3 text-center">
+                        <div className="flex justify-center gap-3">
+                          {!showStaffTrash ? (
+                            <>
+                              <button onClick={() => setStaffForm({ id: s.id, name: s.name, access_menus: s.access_menus || [] })} className="text-blue-500 font-bold text-[10px] uppercase">Akses</button>
+                              <button onClick={() => handleDeleteStaff(s.id)} className="text-red-400 font-bold text-[10px] uppercase">Hapus</button>
+                            </>
+                          ) : (
+                            <>
+                              <button onClick={() => handleRestoreStaff(s.id)} className="text-green-500 font-bold text-[10px] uppercase">Restore</button>
+                              <button onClick={() => handlePermanentDeleteStaff(s.id)} className="text-red-600 font-black text-[10px] uppercase">Permanent</button>
+                            </>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'diagnosis' && (
+          <div className="space-y-6">
+            {/* Form Diagnosis */}
+            <div className={`bg-white p-6 rounded-2xl shadow-sm space-y-4 border-2 ${diagnosisForm.id ? 'border-blue-400' : 'border-transparent'}`}>
+              <div className="flex justify-between items-center">
+                <h3 className="font-bold text-gray-700 uppercase text-sm tracking-wider">Database Standard Diagnosis</h3>
+                {diagnosisForm.id && <button onClick={() => setDiagnosisForm({id:null, code:'', name:'', description:''})} className="text-xs text-red-500 font-bold">BATAL</button>}
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="text-[10px] font-bold text-gray-400 uppercase">Kode ICD-10</label>
+                  <input type="text" className="w-full p-3 border rounded-xl mt-1 text-sm font-mono uppercase" placeholder="L70.0" value={diagnosisForm.code} onChange={(e) => setDiagnosisForm({...diagnosisForm, code: e.target.value.toUpperCase().replace(/\s/g, '')})} />
+                  <p className="text-[8px] text-gray-400 mt-1 italic leading-tight">Format: Huruf + Angka (Contoh: L70.0)</p>
+                </div>
+                <div className="col-span-2">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase">Nama Kondisi / Penyakit</label>
+                  <input type="text" className="w-full p-3 border rounded-xl mt-1 text-sm" placeholder="Contoh: Acne Vulgaris" value={diagnosisForm.name} onChange={(e) => setDiagnosisForm({...diagnosisForm, name: e.target.value})} />
+                </div>
+              </div>
+              <button onClick={handleSimpanDiagnosis} disabled={isLoading} className="w-full py-4 rounded-xl text-white font-bold shadow-md uppercase tracking-wider" style={{ backgroundColor: theme.primaryColor }}>
+                {isLoading ? 'MEMPROSES...' : 'SIMPAN DIAGNOSIS'}
+              </button>
+            </div>
+
+            {/* List Diagnosis */}
+            <div className="space-y-4">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 px-1">
+                <div>
+                  <h3 className="font-black text-gray-400 text-[10px] uppercase tracking-widest">
+                    {showTrash ? '🗑️ Sampah Diagnosis' : '📋 Database Diagnosis'}
+                  </h3>
+                </div>
+                <div className="flex gap-2">
+                   <button 
+                    onClick={() => setShowTrash(!showTrash)}
+                    className={`text-[10px] font-bold px-3 py-1 rounded-full border transition-all ${showTrash ? 'bg-orange-500 text-white border-transparent' : 'text-gray-400 border-gray-200'}`}
+                  >
+                    {showTrash ? 'LIHAT AKTIF' : 'LIHAT SAMPAH'}
+                  </button>
+                </div>
+              </div>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <input 
+                  type="text" 
+                  placeholder="Cari Diagnosis atau Kode..." 
+                  className="flex-1 p-3 border border-gray-200 rounded-xl text-xs outline-none focus:ring-1"
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+
+              <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+                <table className="w-full text-left text-sm">
+                  <thead className="bg-gray-50 text-gray-400 uppercase text-[10px]">
+                    <tr>
+                      <th className="p-3">Kode</th>
+                      <th className="p-3">Diagnosis</th>
+                      <th className="p-3 text-center">Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {diagnoses
+                      .filter(d => (d.name?.toLowerCase() || "").includes(searchQuery.toLowerCase()) || (d.code?.toLowerCase() || "").includes(searchQuery.toLowerCase()))
+                      .map((item) => (
+                      <tr key={item.id} className="hover:bg-gray-50">
+                        <td className="p-3 font-mono font-bold text-xs text-blue-600">{item.code}</td>
+                        <td className="p-3 text-xs font-medium text-gray-700">{item.name}</td>
+                        <td className="p-3 text-center">
+                          <div className="flex justify-center gap-2">
+                            {showTrash ? (
+                              <button onClick={() => handleRestore(item.id)} className="text-green-500 font-bold text-[10px] uppercase">Restore</button>
+                            ) : (
+                              <>
+                                <button onClick={() => setDiagnosisForm({id: item.id, code: item.code, name: item.name})} className="text-blue-500 font-bold text-[10px] uppercase">Edit</button>
+                                <button onClick={() => handleDeleteDiagnosis(item.id)} className="text-red-400 font-bold text-[10px] uppercase">Hapus</button>
+                              </>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'shift' && (
+          <div className="space-y-6">
+            <div className={`bg-white p-6 rounded-2xl shadow-sm space-y-4 border-2 transition-all ${shiftForm.id ? 'border-blue-400' : 'border-transparent'}`}>
+              <div className="flex justify-between items-center">
+                <h3 className="font-bold text-gray-700 uppercase text-sm tracking-wider">Kelola Shift Kerja</h3>
+                {shiftForm.id && <button onClick={() => setShiftForm({ id: null, name: '', start_time: '09:00', end_time: '17:00' })} className="text-xs text-red-500 font-bold uppercase">Batal</button>}
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="md:col-span-1">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase">Nama Shift</label>
+                  <input type="text" className="w-full p-3 border rounded-xl mt-1 text-sm" placeholder="Contoh: Pagi, Malam, Sesi 1" value={shiftForm.name} onChange={(e) => setShiftForm({...shiftForm, name: e.target.value})} />
+                </div>
+                <div>
+                  <label className="text-[10px] font-bold text-gray-400 uppercase">Jam Mulai</label>
+                  <input type="time" className="w-full p-3 border rounded-xl mt-1 text-sm" value={shiftForm.start_time} onChange={(e) => setShiftForm({...shiftForm, start_time: e.target.value})} />
+                </div>
+                <div>
+                  <label className="text-[10px] font-bold text-gray-400 uppercase">Jam Selesai</label>
+                  <input type="time" className="w-full p-3 border rounded-xl mt-1 text-sm" value={shiftForm.end_time} onChange={(e) => setShiftForm({...shiftForm, end_time: e.target.value})} />
+                </div>
+              </div>
+              <button onClick={handleSimpanShift} disabled={isLoading} className="w-full py-4 rounded-xl text-white font-bold shadow-md uppercase tracking-wider" style={{ backgroundColor: theme.primaryColor }}>
+                {isLoading ? 'MEMPROSES...' : 'SIMPAN SHIFT'}
+              </button>
+            </div>
+
+            <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+              <table className="w-full text-left text-sm">
+                <thead className="bg-gray-50 text-gray-400 uppercase font-black">
+                  <tr>
+                    <th className="p-3">Shift</th>
+                    <th className="p-3">Jam Kerja</th>
+                    <th className="p-3 text-center">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {shifts.length === 0 && !isLoading && (
+                    <tr><td colSpan="3" className="p-10 text-center text-gray-400 text-xs italic">Belum ada data shift.</td></tr>
+                  )}
+                  {shifts.map((s) => (
+                    <tr key={s.id} className="hover:bg-gray-50">
+                      <td className="p-3 font-bold text-gray-700">{s.name}</td>
+                      <td className="p-3 text-xs font-mono">{s.start_time.substring(0,5)} - {s.end_time.substring(0,5)}</td>
+                      <td className="p-3">
+                        <div className="flex justify-center gap-2">
+                          <button onClick={() => setShiftForm(s)} className="text-blue-500 font-bold text-[10px] uppercase">Edit</button>
+                          <button onClick={() => handleDeleteShift(s.id)} className="text-red-400 font-bold text-[10px] uppercase">Hapus</button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'ruangan' && (
+          <div className="space-y-6">
+            {/* Form Ruangan */}
+            <div className={`bg-white p-6 rounded-2xl shadow-sm space-y-4 border-2 transition-all ${roomForm.id ? 'border-blue-400' : 'border-transparent'}`}>
+              <div className="flex justify-between items-center">
+                <h3 className="font-bold text-gray-700 uppercase text-sm tracking-wider">
+                  {roomForm.id ? 'Edit Ruangan' : 'Tambah Ruangan Klinik'}
+                </h3>
+                {roomForm.id && (
+                  <button onClick={() => setRoomForm({ id: null, name: '', description: '', is_active: true })} className="text-xs text-red-500 font-bold uppercase">Batal Edit</button>
+                )}
+              </div>
+              <div className="space-y-3">
+                <div>
+                  <label className="text-[10px] font-bold text-gray-400 uppercase">Nama Ruangan</label>
+                  <input 
+                    type="text" 
+                    className="w-full p-3 border rounded-xl mt-1 text-sm" 
+                    placeholder="Contoh: Ruang Tindakan 01" 
+                    value={roomForm.name} 
+                    onChange={(e) => setRoomForm({...roomForm, name: e.target.value})} 
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-bold text-gray-400 uppercase">Keterangan / Fasilitas</label>
+                  <textarea 
+                    className="w-full p-3 border rounded-xl mt-1 text-sm" 
+                    rows="2" 
+                    placeholder="Contoh: Bed Laser, AC, Lampu Tindakan..." 
+                    value={roomForm.description} 
+                    onChange={(e) => setRoomForm({...roomForm, description: e.target.value})}
+                  />
+                </div>
+              </div>
+              <button 
+                onClick={handleSimpanRoom} 
+                disabled={isLoading} 
+                className="w-full py-4 rounded-xl text-white font-bold shadow-md uppercase tracking-wider" 
+                style={{ backgroundColor: theme.primaryColor }}
+              >
+                {isLoading ? 'MEMPROSES...' : (roomForm.id ? 'SIMPAN PERUBAHAN' : 'SIMPAN RUANGAN BARU')}
+              </button>
+            </div>
+
+            {/* List Ruangan */}
+            <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+              <div className="p-3 bg-gray-50 border-b">
+                <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Daftar Ruangan Aktif</h4>
+              </div>
+              <div className="divide-y divide-gray-100">
+                {rooms.map((room) => (
+                  <div key={room.id} className="p-4 flex justify-between items-center hover:bg-gray-50 transition-colors">
+                    <div>
+                      <p className="font-bold text-gray-800">{room.name}</p>
+                      <p className="text-[10px] text-gray-400 italic">{room.description || 'Tidak ada keterangan'}</p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <button onClick={() => setRoomForm(room)} className="text-blue-500 font-bold text-[10px] uppercase">Edit</button>
+                      <button 
+                        onClick={() => handleToggleRoomActive(room.id, room.is_active)}
+                        className={`text-[10px] px-2 py-1 rounded-full font-bold uppercase ${room.is_active ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}
+                      >
+                        {room.is_active ? 'Aktif' : 'Non-Aktif'}
+                      </button>
+                    </div>
+                  </div>
+                ))}
+                {rooms.length === 0 && <p className="p-10 text-center text-gray-400 text-xs italic">Belum ada data ruangan.</p>}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Modal Alasan Non-aktifkan Staff */}
+      {showDeactivateModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[150] flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl animate-slide-up">
+            <h3 className="font-black text-gray-800 uppercase tracking-widest text-sm mb-1">Non-aktifkan User</h3>
+            <p className="text-xs text-gray-500 mb-4 italic">{selectedStaffName}</p>
+            
+            <label className="text-[10px] font-bold text-gray-400 uppercase mb-2 block">Pilih Alasan:</label>
+            <div className="space-y-2 mb-6">
+              {['Resign / Keluar', 'Cuti Panjang', 'Pelanggaran Disiplin', 'Lainnya'].map(reason => (
+                <button 
+                  key={reason}
+                  onClick={() => confirmDeactivate(reason)}
+                  className="w-full py-3 px-4 bg-gray-50 hover:bg-red-50 hover:text-red-600 text-gray-600 rounded-xl text-sm font-bold text-left transition-colors border border-gray-100"
+                >
+                  {reason}
+                </button>
+              ))}
+            </div>
+            
+            <button 
+              onClick={() => setShowDeactivateModal(false)}
+              className="w-full py-3 text-gray-400 text-xs font-bold uppercase tracking-widest"
+            >Batal</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default MasterData;

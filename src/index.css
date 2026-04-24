@@ -1,0 +1,31 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply font-['Inter'] text-slate-900;
+  }
+  h1, h2, h3, .font-heading {
+    @apply font-['Montserrat'];
+  }
+}
+
+@media print {
+  @page {
+    size: 58mm auto; /* Menyesuaikan lebar 58mm dan panjang otomatis */
+    margin: 0;
+  }
+  body {
+    margin: 0;
+    padding: 0;
+    -webkit-print-color-adjust: exact;
+  }
+  .no-print {
+    display: none !important;
+  }
+  .print-only {
+    display: block !important;
+    width: 58mm;
+  }
+}

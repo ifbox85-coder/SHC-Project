@@ -1,0 +1,28 @@
+:root {
+  /* Variabel ini akan diupdate nilainya dari Menu Settings */
+  --primary-gold: #2c2c2b; 
+}
+
+.btn-primary {
+  background-color: var(--primary-gold);
+}
+
+@keyframes slide-up {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.3s ease-out;
+}
+
+.touch-target {
+  min-height: 44px;
+  padding: 0.75rem 1rem;
+}
+
+@media (min-width: 768px) {
+  .tablet\\:grid-cols-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
