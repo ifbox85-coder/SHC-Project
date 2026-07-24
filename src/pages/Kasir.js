@@ -379,7 +379,7 @@ const Kasir = () => {
 
   // Komponen Konten Struk (Disesuaikan untuk Blueprint 58D)
   const ThermalReceipt = () => (
-    <div className="bg-white p-2 text-black font-mono text-[11px] leading-tight relative overflow-hidden" style={{ width: '50mm', margin: '0 auto' }}>
+    <div className="bg-white p-2 text-black font-mono text-[11px] leading-tight relative overflow-hidden printable" style={{ width: '50mm', margin: '0 auto' }}>
       {/* Watermark Background untuk Preview (Draft) */}
       {!paymentSuccess && (
         <div className="absolute inset-0 pointer-events-none opacity-[0.08] flex flex-wrap justify-center content-center gap-2 rotate-[-25deg] select-none text-[10px] font-black uppercase leading-none">
