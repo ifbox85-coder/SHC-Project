@@ -31,7 +31,7 @@ const Kasir = () => {
   const fetchSettings = async () => {
     const { data } = await supabase.from('settings').select('ppn_rate, is_rounding_active').limit(1).maybeSingle();
     if (data) {
-      if (data.ppn_rate) setPpnRate(data.ppn_rate / 100);
+      if (data.ppn_rate != null) setPpnRate(data.ppn_rate / 100);
       setIsRoundingActive(data.is_rounding_active || false);
     }
   };
@@ -379,7 +379,7 @@ const Kasir = () => {
 
   // Komponen Konten Struk (Disesuaikan untuk Blueprint 58D)
   const ThermalReceipt = () => (
-    <div className="bg-white p-2 text-black font-mono text-[11px] leading-tight relative overflow-hidden printable" style={{ width: '50mm', margin: '0 auto' }}>
+    <div className="bg-white p-2 text-black font-mono text-[11px] leading-tight relative overflow-hidden" style={{ width: '50mm', margin: '0 auto' }}>
       {/* Watermark Background untuk Preview (Draft) */}
       {!paymentSuccess && (
         <div className="absolute inset-0 pointer-events-none opacity-[0.08] flex flex-wrap justify-center content-center gap-2 rotate-[-25deg] select-none text-[10px] font-black uppercase leading-none">
@@ -704,7 +704,7 @@ const Kasir = () => {
 
         {/* Modal Preview Struk (Blueprint 58D Size) */}
         {showPrintModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-80 z-[100] flex flex-col items-center justify-center p-4 print-area">
+          <div className="fixed inset-0 bg-black bg-opacity-80 z-[100] flex flex-col items-center justify-center p-4 print-area printable">
             <div className="bg-gray-200 p-1 rounded-lg shadow-2xl mb-4 overflow-hidden" style={{ width: '58mm' }}>
               <div className="bg-white shadow-inner">
                 <ThermalReceipt />
