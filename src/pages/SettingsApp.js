@@ -38,6 +38,7 @@ const SettingsApp = () => {
           lng: data.clinic_lng || 106.8166,
           radius: data.attendance_radius || 50,
           ppnRate: data.ppn_rate || 11,
+          ppnRate: data.ppn_rate != null ? data.ppn_rate : 11,
           isRoundingActive: data.is_rounding_active || false
         });
         if (data.logo_url) setPreviewLogo(data.logo_url);
