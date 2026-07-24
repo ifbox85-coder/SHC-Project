@@ -479,8 +479,9 @@ const Kasir = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-32 no-print">
-      {/* Header */}
+    <>
+      <div className="min-h-screen bg-gray-50 pb-32 no-print">
+        {/* Header */}
       <div className="p-4 text-white shadow-md flex justify-between items-center" style={{ backgroundColor: theme.primaryColor }}>
         <div className="flex items-center">
           <button onClick={() => setSelectedEncounter(null)} className="mr-3 text-2xl active:scale-90 transition-transform">←</button>
@@ -699,35 +700,36 @@ const Kasir = () => {
           </div>
         )}
       </div>
+      </div>
 
-      {/* Modal Preview Struk (Blueprint 58D Size) */}
-      {showPrintModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-80 z-[100] flex flex-col items-center justify-center p-4">
-          <div className="bg-gray-200 p-1 rounded-lg shadow-2xl mb-4 overflow-hidden" style={{ width: '58mm' }}>
-            <div className="bg-white shadow-inner">
-              <ThermalReceipt />
+        {/* Modal Preview Struk (Blueprint 58D Size) */}
+        {showPrintModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-80 z-[100] flex flex-col items-center justify-center p-4 print-area">
+            <div className="bg-gray-200 p-1 rounded-lg shadow-2xl mb-4 overflow-hidden" style={{ width: '58mm' }}>
+              <div className="bg-white shadow-inner">
+                <ThermalReceipt />
+              </div>
+            </div>
+            
+            <div className="flex gap-3 w-full max-w-[58mm] no-print">
+              <button 
+                onClick={() => {
+                  if (paymentSuccess) {
+                    resetKasir();
+                  } else {
+                    setShowPrintModal(false);
+                  }
+                }}
+                className="flex-1 py-3 bg-white text-gray-700 rounded-xl font-bold text-sm uppercase"
+              >Batal</button>
+              <button 
+                onClick={() => window.print()}
+                className="flex-1 py-3 bg-green-600 text-white rounded-xl font-bold text-sm uppercase shadow-lg"
+              >Cetak</button>
             </div>
           </div>
-          
-          <div className="flex gap-3 w-full max-w-[58mm]">
-            <button 
-              onClick={() => {
-                if (paymentSuccess) {
-                  resetKasir();
-                } else {
-                  setShowPrintModal(false);
-                }
-              }}
-              className="flex-1 py-3 bg-white text-gray-700 rounded-xl font-bold text-sm uppercase"
-            >Batal</button>
-            <button 
-              onClick={() => window.print()}
-              className="flex-1 py-3 bg-green-600 text-white rounded-xl font-bold text-sm uppercase shadow-lg"
-            >Cetak</button>
-          </div>
-        </div>
-      )}
-    </div>
+        )}
+    </>
   );
 };
 
