@@ -444,10 +444,12 @@ const Kasir = () => {
             <span>-{calculatedDiskon.toLocaleString()}</span>
           </div>
         )}
-        <div className="flex justify-between">
-          <span>PPN ({ppnRate * 100}%)</span>
-          <span>{Math.round(totalPPN).toLocaleString()}</span>
-        </div>
+        {totalPPN > 0 && (
+          <div className="flex justify-between">
+            <span>PPN ({ppnRate * 100}%)</span>
+            <span>{Math.round(totalPPN).toLocaleString()}</span>
+          </div>
+        )}
         {isRoundingActive && (
           <div className="flex justify-between italic">
             <span>Pembulatan</span>
