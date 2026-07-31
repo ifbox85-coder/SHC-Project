@@ -18,13 +18,13 @@
     visibility: hidden;
   }
 
-  /* 2. Tampilkan HANYA area konten cetak dan semua elemen di dalamnya */
-  .print-content-area, .print-content-area * {
+  /* 2. Tampilkan HANYA area cetak dan semua elemen di dalamnya */
+  .print-area, .print-area * {
     visibility: visible;
   }
 
-  /* 3. Posisikan area konten cetak di pojok kiri atas halaman cetak */
-  .print-content-area {
+  /* 3. Posisikan area cetak di pojok kiri atas halaman cetak */
+  .print-area {
     position: absolute;
     left: 0;
     top: 0;
@@ -32,10 +32,10 @@
     padding: 0 !important;
     box-shadow: none !important;
     border: none !important;
-    background: none !important;
+    background: white !important; /* Pastikan background tetap putih */
   }
   
-  /* 4. Sembunyikan tombol-tombol dan elemen lain yang tidak perlu secara eksplisit */
+  /* 4. Sembunyikan tombol-tombol dan elemen lain yang tidak perlu */
   .no-print {
     display: none !important;
   }
