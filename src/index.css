@@ -28,4 +28,15 @@
     display: block !important;
     width: 58mm;
   }
+  .printable {
+    display: block !important;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+  }
+  .printable-content {
+    width: 58mm !important;
+    margin: 0 !important;
+  }
 }
