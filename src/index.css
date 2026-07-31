@@ -11,32 +11,32 @@
   }
 }
 
+/* Ganti atau perbarui aturan @media print yang sudah ada dengan ini */
 @media print {
-  @page {
-    size: 58mm auto; /* Menyesuaikan lebar 58mm dan panjang otomatis */
-    margin: 0;
+  /* 1. Sembunyikan semua elemen di body secara default saat mencetak */
+  body * {
+    visibility: hidden;
   }
-  body {
-    margin: 0;
-    padding: 0;
-    -webkit-print-color-adjust: exact;
+
+  /* 2. Tampilkan HANYA area konten cetak dan semua elemen di dalamnya */
+  .print-content-area, .print-content-area * {
+    visibility: visible;
   }
+
+  /* 3. Posisikan area konten cetak di pojok kiri atas halaman cetak */
+  .print-content-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+    background: none !important;
+  }
+  
+  /* 4. Sembunyikan tombol-tombol dan elemen lain yang tidak perlu secara eksplisit */
   .no-print {
     display: none !important;
-  }
-  .print-only {
-    display: block !important;
-    width: 58mm;
-  }
-  .printable {
-    display: block !important;
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-  }
-  .printable-content {
-    width: 58mm !important;
-    margin: 0 !important;
   }
 }
