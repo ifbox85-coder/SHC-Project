@@ -1,23 +1,21 @@
 import React from 'react';
 import QRCode from 'qrcode.react';
-import { useContext } from 'react';
-import { ThemeContext } from '../App';
+import { useContext, forwardRef } from 'react'; // Import forwardRef
+import { ThemeContext } from '../App'; // Pastikan path ini benar
 
-const QueuePrint = ({ queueData, onPrint }) => {
+const QueuePrint = forwardRef(({ queueData }, ref) => { // Gunakan forwardRef
   const theme = useContext(ThemeContext);
-  
-  const clinicName = 'SHC CLINIK';
-  const address = 'Jl. Example No.123';
-  
+
   return (
-    <div style={{
-      width: '58mm', // Bluetooth thermal 58D
-      padding: '12px 10px',
-      fontFamily: 'Arial, sans-serif',
+    <div ref={ref} style={{ // Tambahkan ref di sini
+      width: '52mm', // Mengurangi lebar agar ada margin
+      padding: '8px 6px', // Mengurangi padding
+      fontFamily: 'monospace, "Courier New", Courier', // Font yang lebih konsisten untuk thermal
       fontSize: '11px',
       lineHeight: '1.3',
       color: '#000',
-      background: 'white'
+      background: 'white',
+      margin: '0 auto' // Center di preview
     }}>
       {/* Header */}
       <div style={{ textAlign: 'center', marginBottom: '12px', borderBottom: '1px solid #000', paddingBottom: '8px' }}>
@@ -29,9 +27,9 @@ const QueuePrint = ({ queueData, onPrint }) => {
           textTransform: 'uppercase',
           letterSpacing: '1px'
         }}>
-          {clinicName}
+          {theme.clinicName}
         </h1>
-        <p style={{ fontSize: '9px', margin: '0 0 2px 0', opacity: 0.9 }}>{address}</p>
+        <p style={{ fontSize: '9px', margin: '0 0 2px 0', opacity: 0.9 }}>{theme.address}</p>
         <p style={{ fontSize: '10px', margin: 0, fontWeight: 'bold' }}>
           {new Date().toLocaleDateString('id-ID')} {new Date().toLocaleTimeString('id-ID', {hour: '2-digit', minute: '2-digit'})}
         </p>
@@ -104,7 +102,6 @@ const QueuePrint = ({ queueData, onPrint }) => {
       <div style={{ height: '15px' }}></div> {/* Thermal cutter */}
     </div>
   );
-};
+});
 
 export default QueuePrint;
-
