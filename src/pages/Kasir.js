@@ -714,26 +714,30 @@ const Kasir = () => {
 
         {/* Modal Preview Struk (Blueprint 58D Size) */}
         {showPrintModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-80 z-[100] flex flex-col items-center justify-center p-4">
-            <div className="bg-white shadow-lg rounded-lg overflow-hidden mb-4 print-area" style={{ width: '58mm' }}>
-              <ThermalReceipt />
-            </div>
-            
-            <div className="flex gap-3 w-full max-w-[58mm] no-print">
-              <button 
-                onClick={() => {
-                  if (paymentSuccess) {
-                    resetKasir();
-                  } else {
-                    setShowPrintModal(false);
-                  }
-                }}
-                className="flex-1 py-3 bg-white text-gray-700 rounded-xl font-bold text-sm uppercase"
-              >Batal</button>
-              <button 
-                onClick={() => window.print()}
-                className="flex-1 py-3 bg-green-600 text-white rounded-xl font-bold text-sm uppercase shadow-lg"
-              >Cetak</button>
+          <div className="print-container">
+            <div className="fixed inset-0 bg-black bg-opacity-80 z-[100] flex flex-col items-center justify-center p-4 no-print">
+              <div className="bg-white shadow-lg rounded-lg overflow-hidden mb-4" style={{ width: '58mm' }}>
+                <div className="print-area">
+                  <ThermalReceipt />
+                </div>
+              </div>
+              
+              <div className="flex gap-3 w-full max-w-[58mm] no-print">
+                <button 
+                  onClick={() => {
+                    if (paymentSuccess) {
+                      resetKasir();
+                    } else {
+                      setShowPrintModal(false);
+                    }
+                  }}
+                  className="flex-1 py-3 bg-white text-gray-700 rounded-xl font-bold text-sm uppercase"
+                >Batal</button>
+                <button 
+                  onClick={() => window.print()}
+                  className="flex-1 py-3 bg-green-600 text-white rounded-xl font-bold text-sm uppercase shadow-lg"
+                >Cetak</button>
+              </div>
             </div>
           </div>
         )}
