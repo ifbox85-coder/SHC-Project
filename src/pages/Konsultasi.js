@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useContext } from 'react';
-import { useReactToPrint } from 'react-to-print';
+import { useReactToPrint } from 'react-to-print'; // useReactToPrint sudah benar
 import QueuePrint from '../components/QueuePrint';
 import { ThemeContext } from '../App';
 import { useNavigate } from 'react-router-dom';
@@ -1131,7 +1131,7 @@ const Konsultasi = () => {
       {showPrintModal && (
         <div className="fixed inset-0 bg-black bg-opacity-80 z-[110] flex flex-col items-center justify-center p-4">
           <div className="bg-gray-200 p-1 rounded-lg shadow-2xl mb-6 overflow-hidden" style={{ width: '58mm' }}>
-            <div className="bg-white shadow-inner">
+            <div className="bg-white shadow-inner"> 
               <QueuePrint ref={printRef} queueData={printData} />
             </div>
           </div>

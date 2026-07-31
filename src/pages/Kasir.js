@@ -379,7 +379,7 @@ const Kasir = () => {
 
   // Komponen Konten Struk (Disesuaikan untuk Blueprint 58D)
   const ThermalReceipt = () => (
-    <div className="bg-white p-2 text-black font-mono text-[11px] leading-tight relative overflow-hidden" style={{ width: '50mm', margin: '0 auto' }}>
+    <div className="bg-white p-1 text-black font-mono text-[10px] leading-tight relative overflow-hidden" style={{ width: '52mm', margin: '0 auto' }}>
       {/* Watermark Background untuk Preview (Draft) */}
       {!paymentSuccess && (
         <div className="absolute inset-0 pointer-events-none opacity-[0.08] flex flex-wrap justify-center content-center gap-2 rotate-[-25deg] select-none text-[10px] font-black uppercase leading-none">
@@ -400,7 +400,7 @@ const Kasir = () => {
           onError={(e) => e.target.style.display = 'none'}
         />
         <p className="font-bold text-[13px] uppercase mt-1">{theme.clinicName}</p>
-        <p className="text-[9px]">{theme.address}</p>
+        <p className="text-[8px]">{theme.address}</p>
         <p className="text-[9px]">Telp: 0812-XXXX-XXXX</p>
       </div>
 
@@ -420,7 +420,7 @@ const Kasir = () => {
       <div className="border-b border-dashed border-gray-400 my-1"></div>
 
       <div className="space-y-1">
-        {billingItems.map((item, idx) => (
+        {billingItems.map((item, idx) => ( // Mengurangi ukuran font agar tidak terpotong
           <div key={idx}>
             <p>{item.name}</p>
             <div className="flex justify-between">
@@ -474,7 +474,7 @@ const Kasir = () => {
       </div>
 
       <div className="text-center mt-4 uppercase text-[9px]">
-        <p>*** TERIMA KASIH ***</p>
+        <p>*** {theme.footerNota || 'TERIMA KASIH'} ***</p>
         <p>Layanan: SHC-System</p>
       </div>
     </div>
