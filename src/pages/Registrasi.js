@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext, useRef } from 'react';
-import { useReactToPrint } from 'react-to-print'; // useReactToPrint sudah benar
+import { useReactToPrint } from 'react-to-print';
 import QueuePrint from '../components/QueuePrint';
 import { ThemeContext } from '../App';
 import { useNavigate } from 'react-router-dom';
@@ -801,11 +801,11 @@ const Registrasi = () => {
 
       {/* Modal Preview Struk Antrean (Seirama dengan Kasir) */}
       {showPrintModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-80 z-[110] flex flex-col items-center justify-center p-4 no-print">
-          <div className="bg-gray-200 p-1 rounded-lg shadow-2xl mb-6 overflow-hidden printable-area" style={{ width: '58mm' }}>
+        <div className="fixed inset-0 bg-black bg-opacity-80 z-[110] flex flex-col items-center justify-center p-4">
+          <div className="bg-gray-200 p-1 rounded-lg shadow-2xl mb-6 overflow-hidden" style={{ width: '58mm' }}>
             <div className="bg-white shadow-inner">
               {/* Komponen cetak dirender di sini untuk preview */}
-              <QueuePrint ref={printRef} queueData={printData} /> 
+              <QueuePrint ref={printRef} queueData={printData} />
             </div>
           </div>
           
