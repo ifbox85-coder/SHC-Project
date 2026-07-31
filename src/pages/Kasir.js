@@ -714,11 +714,9 @@ const Kasir = () => {
 
         {/* Modal Preview Struk (Blueprint 58D Size) */}
         {showPrintModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-80 z-[100] flex flex-col items-center justify-center p-4 print-modal-container">
-            <div className="bg-gray-200 p-1 rounded-lg shadow-2xl mb-4 overflow-hidden print-content-area" style={{ width: '58mm' }}>
-              <div className="bg-white shadow-inner ">
-                <ThermalReceipt />
-              </div>
+          <div className="fixed inset-0 bg-black bg-opacity-80 z-[100] flex flex-col items-center justify-center p-4">
+            <div className="bg-white shadow-lg rounded-lg overflow-hidden mb-4 print-area" style={{ width: '58mm' }}>
+              <ThermalReceipt />
             </div>
             
             <div className="flex gap-3 w-full max-w-[58mm] no-print">
