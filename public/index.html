@@ -1,17 +1,40 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="en">
   <head>
     <meta charset="utf-8" />
+    <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#D4AF37" />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://fonts.googleapis.com https://fonts.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https: blob:; connect-src 'self' https://*.supabase.co https://*.supabase.com;">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Montserrat:wght@700;800&display=swap" rel="stylesheet">
-    <title>SHC System - Beauty Clinic Management</title>
+    <meta name="theme-color" content="#000000" />
+    <meta
+      name="description"
+      content="Sistem Informasi Klinik"
+    />
+    <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
+    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+
+    <!-- 
+      PERBAIKAN: Menambahkan Content Security Policy (CSP)
+      - default-src 'self': Sumber daya default hanya dari domain sendiri.
+      - font-src 'self' https://fonts.gstatic.com: Izinkan font dari domain sendiri DAN fonts.gstatic.com.
+      - style-src 'self' https://fonts.googleapis.com: Izinkan stylesheet dari domain sendiri DAN fonts.googleapis.com.
+      - connect-src 'self' *.supabase.co: Izinkan koneksi ke Supabase.
+      - img-src 'self' data: <SUPABASE_IMG_URL>: Izinkan gambar dari domain sendiri, data URL, dan Supabase Storage.
+    -->
+    <meta 
+      http-equiv="Content-Security-Policy" 
+      content="
+        default-src 'self'; 
+        font-src 'self' https://fonts.gstatic.com; 
+        style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+        connect-src 'self' *.supabase.co;
+        img-src 'self' data: https://*.supabase.co;
+      "
+    >
+
+    <title>SHC System</title>
   </head>
   <body>
-    <noscript>Anda perlu mengaktifkan JavaScript untuk menjalankan aplikasi ini.</noscript>
+    <noscript>You need to enable JavaScript to run this app.</noscript>
     <div id="root"></div>
   </body>
 </html>
