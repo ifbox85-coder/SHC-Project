@@ -378,8 +378,17 @@ const Kasir = () => {
   const selisihBayar = (Number(jumlahBayar) || 0) - finalGrandTotal;
 
   // Komponen Konten Struk (Disesuaikan untuk Blueprint 58D)
-  const ThermalReceipt = () => (
-    <div className="bg-white p-1 text-black font-mono text-[11px] leading-tight relative overflow-hidden printable-content" style={{ width: '52mm', margin: '0 auto' }}>
+  const ThermalReceipt = () => {
+    const receiptStyle = {
+      width: '58mm',
+      padding: '0 4mm',
+      fontFamily: '"Courier New", Courier, monospace',
+      fontSize: '9pt', // Ukuran point lebih baik untuk cetak
+      lineHeight: '1.4', // Spasi baris lebih renggang agar tidak gepeng
+      color: '#000',
+    };
+    return (
+    <div className="bg-white text-black relative overflow-hidden printable-content" style={receiptStyle}>
       {/* Watermark Background untuk Preview (Draft) - tidak ikut tercetak */}
       {!paymentSuccess && (
         <div className="absolute inset-0 pointer-events-none opacity-[0.08] flex flex-wrap justify-center content-center gap-2 rotate-[-25deg] select-none text-[10px] font-black uppercase leading-none">
@@ -390,13 +399,13 @@ const Kasir = () => {
       )}
       <div className="text-center mb-2">
         <p className={`text-[10px] font-bold border-b border-t border-black py-0.5 mb-1 uppercase ${paymentSuccess ? '' : 'italic'}`}>
-          {paymentSuccess ? "NOTA PEMBAYARAN (RESMI)" : "PREVIEW TAGIHAN (DRAFT)"}
+          {paymentSuccess ? "NOTA PEMBAYARAN" : "DRAFT TAGIHAN"}
         </p>
         {/* Logo Klinik */}
         <img 
           src={theme.logo} 
           alt="Logo" 
-          className="mx-auto h-12 w-auto mb-1 object-contain grayscale"
+          className="mx-auto h-12 w-auto mb-1 object-contain"
           onError={(e) => e.target.style.display = 'none'}
         />
         <p className="font-bold text-[13px] uppercase mt-1">{theme.clinicName}</p>
@@ -410,9 +419,6 @@ const Kasir = () => {
         <span>Tgl : {new Date().toLocaleDateString('id-ID')}</span>
         <span>{new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}</span>
       </div>
-      {paymentSuccess && (
-        <p className="text-[8px] italic">Waktu Bayar: {new Date().toLocaleTimeString('id-ID')}</p>
-      )}
       <p>No  : {selectedEncounter.encounter_number}</p>
       <p>Pas : {selectedEncounter.patients?.full_name?.substring(0, 15)}</p>
       <p>Staff: {selectedEncounter.staff?.name?.substring(0, 15)}</p>
@@ -423,7 +429,7 @@ const Kasir = () => {
         {billingItems.map((item, idx) => (
           <div key={idx}>
             <p>{item.name}</p>
-            <div className="flex justify-between">
+            <div className="flex justify-between" style={{ textRendering: 'geometricPrecision' }}>
               <span>1 x {Number(item.selling_price).toLocaleString()}</span>
               <span>{Number(item.selling_price).toLocaleString()}</span>
             </div>
@@ -433,30 +439,30 @@ const Kasir = () => {
 
       <div className="border-b border-dashed border-gray-400 my-1"></div>
 
-      <div className="space-y-0.5">
+      <div className="space-y-0.5" style={{ textRendering: 'geometricPrecision' }}>
         <div className="flex justify-between">
           <span>Subtotal</span>
           <span>{subTotal.toLocaleString()}</span>
         </div>
         {calculatedDiskon > 0 && (
           <div className="flex justify-between">
-            <span>Diskon ({diskonScope})</span>
+            <span>Diskon</span>
             <span>-{calculatedDiskon.toLocaleString()}</span>
           </div>
         )}
         {totalPPN > 0 && (
           <div className="flex justify-between">
-            <span>PPN ({ppnRate * 100}%)</span>
+            <span>PPN</span>
             <span>{Math.round(totalPPN).toLocaleString()}</span>
           </div>
         )}
         {isRoundingActive && (
           <div className="flex justify-between italic">
             <span>Pembulatan</span>
-            <span>{(finalGrandTotal - rawGrandTotal).toLocaleString()}</span>
+            <span>{Math.round(finalGrandTotal - rawGrandTotal).toLocaleString()}</span>
           </div>
         )}
-        <div className="flex justify-between font-bold text-[12px] pt-1">
+        <div className="flex justify-between font-bold text-[11pt] pt-1">
           <span>TOTAL</span>
           <span>{finalGrandTotal.toLocaleString()}</span>
         </div>
@@ -464,21 +470,23 @@ const Kasir = () => {
 
       <div className="border-b border-dashed border-gray-400 my-1"></div>
 
-      <div className="flex justify-between uppercase">
-        <span>{paymentSuccess ? metodeBayar : 'Rencana Bayar'}</span>
-        <span>{(Number(jumlahBayar) || 0).toLocaleString()}</span>
-      </div>
-      <div className="flex justify-between">
-        <span>{paymentSuccess ? (selisihBayar >= 0 ? 'Kembali' : 'Piutang') : 'Sisa Bayar'}</span>
-        <span>{paymentSuccess ? Math.abs(selisihBayar).toLocaleString() : (finalGrandTotal > (Number(jumlahBayar) || 0) ? (finalGrandTotal - (Number(jumlahBayar) || 0)).toLocaleString() : 0)}</span>
+      <div style={{ textRendering: 'geometricPrecision' }}>
+        <div className="flex justify-between uppercase">
+          <span>{paymentSuccess ? metodeBayar : 'Rencana Bayar'}</span>
+          <span>{(Number(jumlahBayar) || 0).toLocaleString()}</span>
+        </div>
+        <div className="flex justify-between">
+          <span>{paymentSuccess ? (selisihBayar >= 0 ? 'Kembali' : 'Piutang') : 'Sisa Bayar'}</span>
+          <span>{paymentSuccess ? Math.abs(selisihBayar).toLocaleString() : (finalGrandTotal > (Number(jumlahBayar) || 0) ? (finalGrandTotal - (Number(jumlahBayar) || 0)).toLocaleString() : 0)}</span>
+        </div>
       </div>
 
-      <div className="text-center mt-4 uppercase text-[9px]">
-        <p>*** TERIMA KASIH ***</p>
-        <p>Layanan: SHC-System</p>
+      <div className="text-center mt-4 uppercase text-[8pt]">
+        <p>{theme.footerNota || "*** TERIMA KASIH ***"}</p>
+        <p className="italic opacity-70">Layanan: SHC-System</p>
       </div>
     </div>
-  );
+  )};
 
   return (
     <>
@@ -706,8 +714,8 @@ const Kasir = () => {
 
         {/* Modal Preview Struk (Blueprint 58D Size) */}
         {showPrintModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-80 z-[100] flex flex-col items-center justify-center p-4 print-container">
-            <div className="bg-gray-200 p-1 rounded-lg shadow-2xl mb-4 overflow-hidden print-content" style={{ width: '58mm' }}>
+          <div className="fixed inset-0 bg-black bg-opacity-80 z-[100] flex flex-col items-center justify-center p-4 print-modal-container">
+            <div className="bg-gray-200 p-1 rounded-lg shadow-2xl mb-4 overflow-hidden print-content-area" style={{ width: '58mm' }}>
               <div className="bg-white shadow-inner ">
                 <ThermalReceipt />
               </div>
