@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useRef, forwardRef } from 'react';
 import { ThemeContext } from '../App';
+import { useReactToPrint } from 'react-to-print';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../configs/database';
 
@@ -15,7 +16,6 @@ const Kasir = () => {
   const [isRoundingActive, setIsRoundingActive] = useState(false);
   const [jumlahBayar, setJumlahBayar] = useState('');
   const [paymentSuccess, setPaymentSuccess] = useState(false);
-  const [showPrintModal, setShowPrintModal] = useState(false);
   const [metodeBayar, setMetodeBayar] = useState('Tunai');
   const [isSaving, setIsSaving] = useState(false);
   const navigate = useNavigate();
@@ -172,10 +172,15 @@ const Kasir = () => {
     }
   };
 
-  const handlePrint = () => {
-    setShowPrintModal(true);
-  };
-
+  // --- START: Perubahan Logika Cetak ---
+  const receiptRef = useRef();
+  const handlePrint = useReactToPrint({
+    content: () => receiptRef.current,
+    documentTitle: `Nota-${selectedEncounter?.encounter_number || 'billing'}`,
+    onAfterPrint: () => {
+      if (paymentSuccess) resetKasir();
+    }
+  });
   const handleWhatsApp = () => {
     let phone = selectedEncounter.patients?.phone_number || '';
     
@@ -204,7 +209,6 @@ const Kasir = () => {
     setSelectedEncounter(null);
     setPaymentSuccess(false);
     setJumlahBayar('');
-    setShowPrintModal(false);
     setDiskon(0);
     setDiskonScope('Global');
   };
@@ -219,7 +223,9 @@ const Kasir = () => {
     setJumlahBayar(bill.amount_paid?.toString() || '');
     setMetodeBayar(bill.payment_method);
     setPaymentSuccess(true); // Penting agar nota muncul sebagai nota resmi (bukan draft)
-    setShowPrintModal(true);
+    setTimeout(() => {
+      handlePrint(); // Langsung panggil fungsi cetak setelah data siap
+    }, 100); // Beri jeda sedikit agar state terupdate di DOM
   };
 
   // Rekapitulasi Pembayaran Hari Ini
@@ -378,7 +384,7 @@ const Kasir = () => {
   const selisihBayar = (Number(jumlahBayar) || 0) - finalGrandTotal;
 
   // Komponen Konten Struk (Disesuaikan untuk Blueprint 58D)
-  const ThermalReceipt = () => {
+  const ThermalReceipt = forwardRef((props, ref) => {
     const receiptStyle = {
       width: '52mm', // Beri sedikit margin untuk kertas 58mm
       padding: '10px 4px',
@@ -388,15 +394,7 @@ const Kasir = () => {
       color: '#000',
     };
     return (
-    <div className="bg-white text-black relative overflow-hidden printable-content" style={receiptStyle}>
-      {/* Watermark Background untuk Preview (Draft) - tidak ikut tercetak */}
-      {!paymentSuccess && !showPrintModal && (
-        <div className="absolute inset-0 pointer-events-none opacity-[0.08] flex flex-wrap justify-center content-center gap-2 rotate-[-25deg] select-none text-[10px] font-black uppercase leading-none">
-          {Array(60).fill("DRAFT NOTA PREVIEW ").map((txt, i) => (
-            <span key={i} className="whitespace-nowrap">{txt}</span>
-          ))}
-        </div>
-      )}
+    <div ref={ref} className="bg-white text-black relative overflow-hidden printable-content" style={receiptStyle}>
       <div className="text-center mb-2">
         <p className={`text-[9pt] font-bold border-b border-t border-black py-0.5 mb-1 uppercase ${paymentSuccess ? '' : 'italic'}`}>
           {paymentSuccess ? "NOTA PEMBAYARAN" : "DRAFT TAGIHAN"}
@@ -486,11 +484,17 @@ const Kasir = () => {
         <p className="italic opacity-70">Layanan: SHC-System</p>
       </div>
     </div>
-  )};
+  )});
 
   return (
     <>
-      <div className="min-h-screen bg-gray-50 pb-32 no-print">
+      {/* Komponen struk yang akan dicetak, disembunyikan dari layar biasa */}
+      <div className="hidden">
+        <ThermalReceipt ref={receiptRef} />
+      </div>
+
+      {/* Tampilan utama Kasir */}
+      <div className="min-h-screen bg-gray-50 pb-32">
         {/* Header */}
       <div className="p-4 text-white shadow-md flex justify-between items-center" style={{ backgroundColor: theme.primaryColor }}>
         <div className="flex items-center">
@@ -665,14 +669,8 @@ const Kasir = () => {
               >
                 <span>📱</span> Preview WA
               </button>
-              <button 
-                onClick={handlePrint}
-                className="flex-1 py-3 border rounded-xl text-gray-600 text-sm font-bold flex items-center justify-center gap-2"
-              >
-                <span>🖨️</span> Preview Nota
-              </button>
             </div>
-            <button 
+            <button
               onClick={handleConfirmPayment}
               disabled={isSaving || !jumlahBayar || Number(jumlahBayar) <= 0}
               className="w-full py-4 rounded-xl text-white font-bold shadow-lg text-lg uppercase" 
@@ -710,34 +708,6 @@ const Kasir = () => {
           </div>
         )}
       </div>
-      </div>
-
-        {/* Modal Preview Struk (Blueprint 58D Size) */}
-        {showPrintModal && (
-          <div className="print-container">
-            <div className="fixed inset-0 bg-black bg-opacity-80 z-[100] flex flex-col items-center justify-start pt-10 p-4 no-print overflow-y-auto">
-              <div className="bg-white shadow-2xl rounded-lg overflow-hidden mb-4 printable-content">
-                <ThermalReceipt />
-              </div>
-              <div className="flex gap-3 w-full max-w-[58mm] no-print">
-                <button 
-                  onClick={() => {
-                    if (paymentSuccess) {
-                      resetKasir();
-                    } else {
-                      setShowPrintModal(false);
-                    }
-                  }}
-                  className="flex-1 py-3 bg-white text-gray-700 rounded-xl font-bold text-sm uppercase"
-                >Batal</button>
-                <button 
-                  onClick={() => window.print()}
-                  className="flex-1 py-3 bg-green-600 text-white rounded-xl font-bold text-sm uppercase shadow-lg"
-                >Cetak</button>
-              </div>
-            </div>
-          </div>
-        )}
     </>
   );
 };
