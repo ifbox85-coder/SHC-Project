@@ -16,4 +16,10 @@
   .no-print, .no-print * {
     display: none !important;
   }
+
+  /* Atur ukuran halaman cetak agar sesuai dengan kertas thermal 58mm */
+  @page {
+    size: 58mm auto; /* Lebar 58mm, tinggi otomatis sesuai konten */
+    margin: 0;
+  }
 }
