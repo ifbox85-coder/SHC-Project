@@ -385,35 +385,27 @@ const Kasir = () => {
 
   // Komponen Konten Struk (Disesuaikan untuk Blueprint 58D)
   const ThermalReceipt = forwardRef((props, ref) => {
-    const receiptStyle = {
-      width: '52mm', // Beri sedikit margin untuk kertas 58mm
-      padding: '10px 4px',
-      fontFamily: 'monospace, "Courier New", Courier',
-      fontSize: '8pt', // Ukuran point lebih baik untuk cetak, 8pt biasanya ideal
-      lineHeight: '1.3', // Spasi baris lebih renggang agar tidak gepeng
-      color: '#000',
-    };
     return (
-    <div ref={ref} className="bg-white text-black relative overflow-hidden printable-content" style={receiptStyle}>
-      <div className="text-center mb-2">
-        <p className={`text-[9pt] font-bold border-b border-t border-black py-0.5 mb-1 uppercase ${paymentSuccess ? '' : 'italic'}`}>
+    <div ref={ref} style={{ width: '58mm', padding: '10px 5mm', fontFamily: 'monospace', fontSize: '8pt', color: 'black', background: 'white' }}>
+      <div style={{ textAlign: 'center', marginBottom: '8px' }}>
+        <p style={{ fontSize: '9pt', fontWeight: 'bold', borderBottom: '1px solid black', borderTop: '1px solid black', padding: '2px 0', margin: '0 0 4px 0', textTransform: 'uppercase', fontStyle: paymentSuccess ? 'normal' : 'italic' }}>
           {paymentSuccess ? "NOTA PEMBAYARAN" : "DRAFT TAGIHAN"}
         </p>
         {/* Logo Klinik */}
         <img 
           src={theme.logo} 
           alt="Logo" 
-          className="mx-auto h-12 w-auto mb-1 object-contain"
+          style={{ height: '40px', width: 'auto', margin: '4px auto', objectFit: 'contain' }}
           onError={(e) => e.target.style.display = 'none'}
         />
-        <p className="font-bold text-[10pt] uppercase mt-1">{theme.clinicName}</p>
-        <p className="text-[7pt]">{theme.address}</p>
-        <p className="text-[7pt]">Telp: 0812-XXXX-XXXX</p>
+        <p style={{ fontWeight: 'bold', fontSize: '10pt', textTransform: 'uppercase', marginTop: '4px', marginBottom: 0 }}>{theme.clinicName}</p>
+        <p style={{ fontSize: '7pt', margin: 0 }}>{theme.address}</p>
+        <p style={{ fontSize: '7pt', margin: 0 }}>Telp: 0812-XXXX-XXXX</p>
       </div>
 
-      <div className="border-b border-dashed border-gray-400 my-1"></div>
+      <div style={{ borderBottom: '1px dashed #888', margin: '6px 0' }}></div>
       
-      <div className="flex justify-between">
+      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
         <span>Tgl : {new Date().toLocaleDateString('id-ID')}</span>
         <span>{new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}</span>
       </div>
@@ -421,13 +413,13 @@ const Kasir = () => {
       <p>Pas : {selectedEncounter.patients?.full_name?.substring(0, 15)}</p>
       <p>Staff: {selectedEncounter.staff?.name?.substring(0, 15)}</p>
 
-      <div className="border-b border-dashed border-gray-400 my-1"></div>
+      <div style={{ borderBottom: '1px dashed #888', margin: '6px 0' }}></div>
 
-      <div className="space-y-1">
+      <div>
         {billingItems.map((item, idx) => (
           <div key={idx}>
             <p>{item.name}</p>
-            <div className="flex justify-between">
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <span>1 x {Number(item.selling_price).toLocaleString()}</span>
               <span>{Number(item.selling_price).toLocaleString()}</span>
             </div>
@@ -435,53 +427,53 @@ const Kasir = () => {
         ))}
       </div>
 
-      <div className="border-b border-dashed border-gray-400 my-1"></div>
+      <div style={{ borderBottom: '1px dashed #888', margin: '6px 0' }}></div>
 
-      <div className="space-y-0.5">
-        <div className="flex justify-between">
+      <div>
+        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
           <span>Subtotal</span>
           <span>{subTotal.toLocaleString()}</span>
         </div>
         {calculatedDiskon > 0 && (
-          <div className="flex justify-between">
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
             <span>Diskon</span>
             <span>-{calculatedDiskon.toLocaleString()}</span>
           </div>
         )}
         {totalPPN > 0 && (
-          <div className="flex justify-between">
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
             <span>PPN</span>
             <span>{Math.round(totalPPN).toLocaleString()}</span>
           </div>
         )}
         {isRoundingActive && (
-          <div className="flex justify-between italic">
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontStyle: 'italic' }}>
             <span>Pembulatan</span>
             <span>{Math.round(finalGrandTotal - rawGrandTotal).toLocaleString()}</span>
           </div>
         )}
-        <div className="flex justify-between font-bold text-[10pt] pt-1">
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: '10pt', paddingTop: '4px' }}>
           <span>TOTAL</span>
           <span>{finalGrandTotal.toLocaleString()}</span>
         </div>
       </div>
 
-      <div className="border-b border-dashed border-gray-400 my-1"></div>
+      <div style={{ borderBottom: '1px dashed #888', margin: '6px 0' }}></div>
 
       <div>
-        <div className="flex justify-between uppercase">
+        <div style={{ display: 'flex', justifyContent: 'space-between', textTransform: 'uppercase' }}>
           <span>{paymentSuccess ? metodeBayar : 'Rencana Bayar'}</span>
           <span>{(Number(jumlahBayar) || 0).toLocaleString()}</span>
         </div>
-        <div className="flex justify-between">
+        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
           <span>{paymentSuccess ? (selisihBayar >= 0 ? 'Kembali' : 'Piutang') : 'Sisa Bayar'}</span>
           <span>{paymentSuccess ? Math.abs(selisihBayar).toLocaleString() : (finalGrandTotal > (Number(jumlahBayar) || 0) ? (finalGrandTotal - (Number(jumlahBayar) || 0)).toLocaleString() : 0)}</span>
         </div>
       </div>
 
-      <div className="text-center mt-4 uppercase text-[7pt]">
+      <div style={{ textAlign: 'center', marginTop: '16px', textTransform: 'uppercase', fontSize: '7pt' }}>
         <p>{theme.footerNota || "*** TERIMA KASIH ***"}</p>
-        <p className="italic opacity-70">Layanan: SHC-System</p>
+        <p style={{ fontStyle: 'italic', opacity: 0.7 }}>Layanan: SHC-System</p>
       </div>
     </div>
   )});
@@ -489,7 +481,8 @@ const Kasir = () => {
   return (
     <>
       {/* Komponen struk yang akan dicetak, disembunyikan dari layar biasa */}
-      <div className="hidden">
+      {/* Menggunakan style untuk menyembunyikan, bukan className="hidden" */}
+      <div style={{ position: 'absolute', left: '-9999px', top: 0 }}>
         <ThermalReceipt ref={receiptRef} />
       </div>
 
