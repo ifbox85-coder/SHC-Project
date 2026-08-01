@@ -12,14 +12,25 @@
 }
 
 @media print {
-  /* Sembunyikan elemen yang tidak perlu dicetak */
-  .no-print, .no-print * {
-    display: none !important;
+  /* 1. Sembunyikan semua elemen di body secara default saat mencetak */
+  body * {
+    visibility: hidden;
   }
 
-  /* Atur ukuran halaman cetak agar sesuai dengan kertas thermal 58mm */
-  @page {
-    size: 58mm auto; /* Lebar 58mm, tinggi otomatis sesuai konten */
-    margin: 0;
+  /* 2. Tampilkan HANYA area cetak dan semua elemen di dalamnya */
+  .print-container, .print-container * {
+    visibility: visible;
+  }
+
+  /* 3. Posisikan area cetak di pojok kiri atas halaman cetak */
+  .print-container {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
   }
 }
