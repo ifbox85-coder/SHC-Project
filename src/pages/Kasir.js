@@ -481,8 +481,8 @@ const Kasir = () => {
   return (
     <>
       {/* Komponen struk yang akan dicetak, disembunyikan dari layar biasa */}
-      {/* Menggunakan style untuk menyembunyikan, bukan className="hidden" */}
-      <div style={{ position: 'absolute', left: '-9999px', top: 0 }}>
+      {/* Metode penyembunyian yang lebih andal untuk react-to-print */}
+      <div style={{ height: 0, overflow: 'hidden' }}>
         <ThermalReceipt ref={receiptRef} />
       </div>
 
