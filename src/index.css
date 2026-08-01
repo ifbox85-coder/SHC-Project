@@ -12,36 +12,14 @@
 }
 
 @media print {
-  /* 1. Sembunyikan semua elemen di body secara default saat mencetak */
-  body * {
-    visibility: hidden;
+  /* Sembunyikan elemen yang tidak perlu dicetak */
+  .no-print, .no-print * {
+    display: none !important;
   }
 
-  /* 2. Tampilkan HANYA konten yang bisa dicetak dan semua elemen di dalamnya */
-  .printable-content, .printable-content * {
-    visibility: visible;
-  }
-
-  /* 3. Posisikan area cetak di pojok kiri atas halaman cetak */
-  .printable-content {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-    margin: 0 !important;
-    padding: 0 !important;
-    box-shadow: none !important;
-    border: none !important;
-  }
-
-  .no-print { visibility: hidden; }
-  @page :nth(odd) {
-    /* Anda bisa menambahkan gaya untuk halaman ganjil di sini jika perlu */
-    /* Contoh: @top-left { content: "Halaman Ganjil"; } */
-  }
-
-  @page :nth(even) {
-    /* Gaya khusus untuk halaman genap, contoh: menambahkan watermark */
-    /* @top-center { content: "Halaman Genap - Dokumen Internal"; } */
+  /* Atur ukuran halaman cetak agar sesuai dengan kertas thermal 58mm */
+  @page {
+    size: 58mm auto; /* Lebar 58mm, tinggi otomatis */
+    margin: 0;
   }
 }
