@@ -716,10 +716,9 @@ const Kasir = () => {
         {showPrintModal && (
           <div className="print-container">
             <div className="fixed inset-0 bg-black bg-opacity-80 z-[100] flex flex-col items-center justify-start pt-10 p-4 no-print overflow-y-auto">
-              <div className="bg-white shadow-2xl rounded-lg overflow-hidden mb-4">
+              <div className="bg-white shadow-2xl rounded-lg overflow-hidden mb-4 printable-content">
                 <ThermalReceipt />
               </div>
-              
               <div className="flex gap-3 w-full max-w-[58mm] no-print">
                 <button 
                   onClick={() => {
