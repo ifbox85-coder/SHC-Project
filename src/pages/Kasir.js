@@ -47,7 +47,7 @@ const Kasir = () => {
           queue_number,
           ttv_data,
           patients (id, full_name, rm_number, phone_number),
-          staff (name)
+          staff:assigned_staff_id (name)
         )
       `)
       .gte('created_at', `${startDate}T00:00:00Z`)
