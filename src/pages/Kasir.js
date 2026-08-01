@@ -715,22 +715,21 @@ const Kasir = () => {
         {/* Modal Preview Struk (Blueprint 58D Size) */}
         {showPrintModal && (
           <div className="print-container">
+            {/* Latar belakang gelap dan tombol-tombol (tidak akan dicetak) */}
             <div className="fixed inset-0 bg-black bg-opacity-80 z-[100] flex flex-col items-center justify-start pt-10 p-4 no-print overflow-y-auto">
+              {/* Konten Struk yang akan ditampilkan di layar DAN dicetak */}
               <div className="bg-white shadow-2xl rounded-lg overflow-hidden mb-4 printable-content">
                 <ThermalReceipt />
               </div>
-              <div className="flex gap-3 w-full max-w-[58mm] no-print">
-                <button 
-                  onClick={() => {
-                    if (paymentSuccess) {
-                      resetKasir();
-                    } else {
-                      setShowPrintModal(false);
-                    }
-                  }}
+              {/* Tombol-tombol di bawah pratinjau */}
+              <div className="flex gap-3 w-full max-w-[280px] no-print">
+                <button
+                  onClick={() => paymentSuccess ? resetKasir() : setShowPrintModal(false)}
                   className="flex-1 py-3 bg-white text-gray-700 rounded-xl font-bold text-sm uppercase"
-                >Batal</button>
-                <button 
+                >
+                  {paymentSuccess ? 'Tutup' : 'Batal'}
+                </button>
+                <button
                   onClick={() => window.print()}
                   className="flex-1 py-3 bg-green-600 text-white rounded-xl font-bold text-sm uppercase shadow-lg"
                 >Cetak</button>
