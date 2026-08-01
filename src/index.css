@@ -34,11 +34,7 @@
     border: none !important;
   }
 
-  /* Sembunyikan elemen yang tidak perlu dicetak */
-  .no-print, .no-print * {
-    display: none !important;
-  }
-
+  .no-print { visibility: hidden; }
   @page :nth(odd) {
     /* Anda bisa menambahkan gaya untuk halaman ganjil di sini jika perlu */
     /* Contoh: @top-left { content: "Halaman Ganjil"; } */
