@@ -33,4 +33,14 @@
     box-shadow: none !important;
     border: none !important;
   }
+
+  @page :nth(odd) {
+    /* Anda bisa menambahkan gaya untuk halaman ganjil di sini jika perlu */
+    /* Contoh: @top-left { content: "Halaman Ganjil"; } */
+  }
+
+  @page :nth(even) {
+    /* Gaya khusus untuk halaman genap, contoh: menambahkan watermark */
+    /* @top-center { content: "Halaman Genap - Dokumen Internal"; } */
+  }
 }
