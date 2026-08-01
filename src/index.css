@@ -17,20 +17,25 @@
     visibility: hidden;
   }
 
-  /* 2. Tampilkan HANYA area cetak dan semua elemen di dalamnya */
-  .print-container, .print-container * {
+  /* 2. Tampilkan HANYA elemen yang memiliki kelas 'printable-content' dan semua isinya */
+  .printable-content, .printable-content * {
     visibility: visible;
   }
 
-  /* 3. Posisikan area cetak di pojok kiri atas halaman cetak */
-  .print-container {
+  /* 3. Posisikan konten yang akan dicetak di pojok kiri atas halaman */
+  .printable-content {
     position: absolute;
     left: 0;
     top: 0;
     width: 100%;
     margin: 0 !important;
     padding: 0 !important;
-    box-shadow: none !important;
-    border: none !important;
+    box-shadow: none !important; /* Hilangkan bayangan saat cetak */
+    border: none !important; /* Hilangkan border saat cetak */
+  }
+
+  /* 4. Pastikan elemen UI lain di dalam modal tetap tersembunyi */
+  .no-print {
+    visibility: hidden !important;
   }
 }
