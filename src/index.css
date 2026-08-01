@@ -12,30 +12,25 @@
 }
 
 @media print {
-  /* 1. Sembunyikan semua elemen di body secara default saat mencetak */
-  body * {
-    visibility: hidden;
+  /* Sembunyikan semua elemen yang tidak perlu dicetak */
+  .no-print {
+    display: none !important;
   }
 
-  /* 2. Tampilkan HANYA elemen yang memiliki kelas 'printable-content' dan semua isinya */
-  .printable-content, .printable-content * {
-    visibility: visible;
-  }
-
-  /* 3. Posisikan konten yang akan dicetak di pojok kiri atas halaman */
-  .printable-content {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
+  /* Pastikan body dan html tidak memiliki margin/padding yang mengganggu */
+  body, html {
     margin: 0 !important;
     padding: 0 !important;
-    box-shadow: none !important; /* Hilangkan bayangan saat cetak */
-    border: none !important; /* Hilangkan border saat cetak */
+    background: white;
   }
 
-  /* 4. Pastikan elemen UI lain di dalam modal tetap tersembunyi */
-  .no-print {
-    visibility: hidden !important;
+  /* Isolasi area cetak dari sisa halaman */
+  #root > *:not(.print-container) {
+    display: none;
+  }
+
+  .print-container {
+    position: static;
+    display: block;
   }
 }
