@@ -17,13 +17,13 @@
     visibility: hidden;
   }
 
-  /* 2. Tampilkan HANYA area cetak dan semua elemen di dalamnya */
-  .print-container, .print-container * {
+  /* 2. Tampilkan HANYA konten yang bisa dicetak dan semua elemen di dalamnya */
+  .printable-content, .printable-content * {
     visibility: visible;
   }
 
   /* 3. Posisikan area cetak di pojok kiri atas halaman cetak */
-  .print-container {
+  .printable-content {
     position: absolute;
     left: 0;
     top: 0;
