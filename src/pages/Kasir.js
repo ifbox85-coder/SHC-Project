@@ -657,13 +657,13 @@ const Kasir = () => {
       {/* Footer Actions */}
       <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t space-y-2">
         {!paymentSuccess ? (
-          <>
+          <div className="animate-fadeIn">
             <div className="flex gap-2">
               <button 
                 onClick={handleWhatsApp}
                 className="flex-1 py-3 border rounded-xl text-gray-600 text-sm font-bold flex items-center justify-center gap-2"
               >
-                <span>📧</span> Preview WA
+                <span>📱</span> Preview WA
               </button>
               <button 
                 onClick={handlePrint}
@@ -680,7 +680,7 @@ const Kasir = () => {
             >
               {isSaving ? 'MEMPROSES...' : 'Konfirmasi & Selesai'}
             </button>
-          </>
+          </div>
         ) : (
           <div className="bg-green-50 p-4 rounded-2xl border-2 border-green-200 space-y-4 animate-fadeIn">
             <div className="text-center">
