@@ -56,6 +56,7 @@ const Konsultasi = () => {
   const printRef = useRef(); 
 
   const handlePrintQueue = useReactToPrint({
+    contentRef: printRef,
     content: () => printRef.current,
     onAfterPrint: () => setShowPrintModal(false),
     documentTitle: 'Nomor Antrean Tindakan',
@@ -76,6 +77,18 @@ const Konsultasi = () => {
       }
     `
   });
+
+  const triggerPrint = () => {
+    try {
+      if (typeof handlePrintQueue === 'function') {
+        handlePrintQueue();
+      } else {
+        window.print();
+      }
+    } catch (e) {
+      window.print();
+    }
+  };
   
   // State untuk Annotation Editor
   const [editorOpen, setEditorOpen] = useState(false);
@@ -1157,7 +1170,7 @@ const Konsultasi = () => {
               className="flex-1 py-3 bg-white text-gray-700 rounded-xl font-bold text-sm uppercase active:scale-95 transition-transform"
             >Batal</button>
             <button 
-              onClick={handlePrintQueue}
+              onClick={triggerPrint}
               className="flex-1 py-3 bg-green-600 text-white rounded-xl font-bold text-sm uppercase shadow-lg active:scale-95 transition-transform"
             >Cetak</button>
           </div>

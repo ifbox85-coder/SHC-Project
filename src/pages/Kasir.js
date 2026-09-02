@@ -141,6 +141,7 @@ const Kasir = () => {
   const [queue, setQueue] = useState([]);
 
   const handlePrintReceipt = useReactToPrint({
+    contentRef: printRef,
     content: () => printRef.current,
     documentTitle: 'Nota Pembayaran',
     removeAfterPrint: false,
@@ -160,6 +161,18 @@ const Kasir = () => {
       }
     `
   });
+
+  const triggerPrint = () => {
+    try {
+      if (typeof handlePrintReceipt === 'function') {
+        handlePrintReceipt();
+      } else {
+        window.print();
+      }
+    } catch (e) {
+      window.print();
+    }
+  };
   const [selectedEncounter, setSelectedEncounter] = useState(null);
   const [dailyBillings, setDailyBillings] = useState([]);
   const [ppnRate, setPpnRate] = useState(0.11); 
@@ -791,7 +804,7 @@ const Kasir = () => {
                 className="flex-1 py-3 bg-white text-gray-700 rounded-xl font-bold text-sm uppercase"
               >Batal</button>
               <button 
-                onClick={handlePrintReceipt}
+                onClick={triggerPrint}
                 className="flex-1 py-3 bg-green-600 text-white rounded-xl font-bold text-sm uppercase shadow-lg"
               >Cetak</button>
             </div>

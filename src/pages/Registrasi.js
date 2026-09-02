@@ -37,6 +37,7 @@ const Registrasi = () => {
   const printRef = useRef(); 
 
   const handlePrintQueue = useReactToPrint({
+    contentRef: printRef,
     content: () => printRef.current,
     onAfterPrint: () => setShowPrintModal(false),
     documentTitle: 'Nomor Antrean',
@@ -57,6 +58,18 @@ const Registrasi = () => {
       }
     `
   });
+
+  const triggerPrint = () => {
+    try {
+      if (typeof handlePrintQueue === 'function') {
+        handlePrintQueue();
+      } else {
+        window.print();
+      }
+    } catch (e) {
+      window.print();
+    }
+  };
 
   const handlePrint = (reg) => {
     const queueData = {
@@ -834,7 +847,7 @@ const Registrasi = () => {
               className="flex-1 py-3 bg-green-500 text-white rounded-xl font-bold text-sm uppercase shadow-lg active:scale-95 transition-transform"
             >📱 WA</button>
             <button 
-              onClick={handlePrintQueue}
+              onClick={triggerPrint}
               className="flex-1 py-3 bg-green-600 text-white rounded-xl font-bold text-sm uppercase shadow-lg active:scale-95 transition-transform"
             >Cetak</button>
           </div>
