@@ -11,26 +11,60 @@
   }
 }
 
+/* Konfigurasi Ukuran Kertas Thermal Struk & Antrean Auto Height */
+@page {
+  size: auto;
+  margin: 0mm !important;
+}
+
 @media print {
-  /* 1. Sembunyikan semua elemen di body secara default saat mencetak */
-  body * {
-    visibility: hidden;
-  }
-
-  /* 2. Tampilkan HANYA area cetak dan semua elemen di dalamnya */
-  .print-container, .print-container * {
-    visibility: visible;
-  }
-
-  /* 3. Posisikan area cetak di pojok kiri atas halaman cetak */
-  .print-container {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
+  html, body {
+    height: auto !important;
+    min-height: 0 !important;
     margin: 0 !important;
     padding: 0 !important;
+    background: #ffffff !important;
+    overflow: visible !important;
+  }
+
+  /* Sembunyikan elemen non-cetak */
+  .no-print,
+  .no-print * {
+    display: none !important;
+  }
+
+  /* Saat window.print() dipanggil langsung */
+  body > *:not(.print-container) {
+    display: none !important;
+  }
+
+  .print-container {
+    position: static !important;
+    display: block !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
     box-shadow: none !important;
     border: none !important;
+  }
+
+  .printable-content {
+    display: block !important;
+    width: auto !important;
+    max-width: 58mm !important;
+    height: auto !important;
+    min-height: 0 !important;
+    margin: 0 auto !important;
+    padding: 0 0 2mm 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+    background: #ffffff !important;
+    page-break-after: avoid !important;
+    break-after: avoid !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
   }
 }
