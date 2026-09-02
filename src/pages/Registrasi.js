@@ -40,7 +40,22 @@ const Registrasi = () => {
     content: () => printRef.current,
     onAfterPrint: () => setShowPrintModal(false),
     documentTitle: 'Nomor Antrean',
-    removeAfterPrint: false
+    removeAfterPrint: false,
+    pageStyle: `
+      @page {
+        size: auto;
+        margin: 0mm !important;
+      }
+      @media print {
+        html, body {
+          height: auto !important;
+          min-height: 0 !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          background: #ffffff !important;
+        }
+      }
+    `
   });
 
   const handlePrint = (reg) => {

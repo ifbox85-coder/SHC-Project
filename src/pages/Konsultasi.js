@@ -59,7 +59,22 @@ const Konsultasi = () => {
     content: () => printRef.current,
     onAfterPrint: () => setShowPrintModal(false),
     documentTitle: 'Nomor Antrean Tindakan',
-    removeAfterPrint: false
+    removeAfterPrint: false,
+    pageStyle: `
+      @page {
+        size: auto;
+        margin: 0mm !important;
+      }
+      @media print {
+        html, body {
+          height: auto !important;
+          min-height: 0 !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          background: #ffffff !important;
+        }
+      }
+    `
   });
   
   // State untuk Annotation Editor

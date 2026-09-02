@@ -1,11 +1,34 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useRef, forwardRef } from 'react';
+import { useReactToPrint } from 'react-to-print';
 import { ThemeContext } from '../App';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../configs/database';
 
 const Kasir = () => {
   const theme = useContext(ThemeContext);
+  const printRef = useRef();
   const [queue, setQueue] = useState([]);
+
+  const handlePrintReceipt = useReactToPrint({
+    content: () => printRef.current,
+    documentTitle: 'Nota Pembayaran',
+    removeAfterPrint: false,
+    pageStyle: `
+      @page {
+        size: auto;
+        margin: 0mm !important;
+      }
+      @media print {
+        html, body {
+          height: auto !important;
+          min-height: 0 !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          background: #ffffff !important;
+        }
+      }
+    `
+  });
   const [selectedEncounter, setSelectedEncounter] = useState(null);
   const [dailyBillings, setDailyBillings] = useState([]);
   const [ppnRate, setPpnRate] = useState(0.11); 
@@ -378,17 +401,18 @@ const Kasir = () => {
   const selisihBayar = (Number(jumlahBayar) || 0) - finalGrandTotal;
 
   // Komponen Konten Struk (Disesuaikan untuk Blueprint 58D)
-  const ThermalReceipt = () => {
+  const ThermalReceipt = forwardRef((props, ref) => {
     const receiptStyle = {
       width: '52mm', // Beri sedikit margin untuk kertas 58mm
-      padding: '10px 4px',
+      padding: '8px 4px 4px 4px',
       fontFamily: 'monospace, "Courier New", Courier',
       fontSize: '8pt', // Ukuran point lebih baik untuk cetak, 8pt biasanya ideal
       lineHeight: '1.3', // Spasi baris lebih renggang agar tidak gepeng
       color: '#000',
+      boxSizing: 'border-box',
     };
     return (
-    <div className="bg-white text-black relative overflow-hidden printable-content" style={receiptStyle}>
+    <div ref={ref} className="bg-white text-black relative overflow-hidden printable-content" style={receiptStyle}>
       {/* Watermark Background untuk Preview (Draft) - tidak ikut tercetak */}
       {!paymentSuccess && !showPrintModal && (
         <div className="absolute inset-0 pointer-events-none opacity-[0.08] flex flex-wrap justify-center content-center gap-2 rotate-[-25deg] select-none text-[10px] font-black uppercase leading-none">
@@ -486,7 +510,8 @@ const Kasir = () => {
         <p className="italic opacity-70">Layanan: SHC-System</p>
       </div>
     </div>
-  )};
+  );
+  });
 
   return (
     <>
@@ -714,27 +739,25 @@ const Kasir = () => {
 
         {/* Modal Preview Struk (Blueprint 58D Size) */}
         {showPrintModal && (
-          <div className="print-container">
-            <div className="fixed inset-0 bg-black bg-opacity-80 z-[100] flex flex-col items-center justify-start pt-10 p-4 no-print overflow-y-auto">
-              <div className="bg-white rounded-lg overflow-hidden mb-4 printable-content">
-                <ThermalReceipt />
-              </div>
-              <div className="flex gap-3 w-full max-w-[58mm] no-print">
-                <button 
-                  onClick={() => {
-                    if (paymentSuccess) {
-                      resetKasir();
-                    } else {
-                      setShowPrintModal(false);
-                    }
-                  }}
-                  className="flex-1 py-3 bg-white text-gray-700 rounded-xl font-bold text-sm uppercase"
-                >Batal</button>
-                <button 
-                  onClick={() => window.print()}
-                  className="flex-1 py-3 bg-green-600 text-white rounded-xl font-bold text-sm uppercase shadow-lg"
-                >Cetak</button>
-              </div>
+          <div className="fixed inset-0 bg-black bg-opacity-80 z-[100] flex flex-col items-center justify-start pt-10 p-4 no-print overflow-y-auto">
+            <div className="bg-white rounded-lg overflow-hidden mb-4 shadow-2xl">
+              <ThermalReceipt ref={printRef} />
+            </div>
+            <div className="flex gap-3 w-full max-w-[58mm] no-print">
+              <button 
+                onClick={() => {
+                  if (paymentSuccess) {
+                    resetKasir();
+                  } else {
+                    setShowPrintModal(false);
+                  }
+                }}
+                className="flex-1 py-3 bg-white text-gray-700 rounded-xl font-bold text-sm uppercase"
+              >Batal</button>
+              <button 
+                onClick={handlePrintReceipt}
+                className="flex-1 py-3 bg-green-600 text-white rounded-xl font-bold text-sm uppercase shadow-lg"
+              >Cetak</button>
             </div>
           </div>
         )}
