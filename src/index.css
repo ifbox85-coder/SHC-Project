@@ -28,31 +28,14 @@
   }
 
   /* Sembunyikan elemen non-cetak */
-  .no-print,
-  .no-print * {
+  .no-print {
     display: none !important;
   }
 
-  /* Saat window.print() dipanggil langsung */
-  body > *:not(.print-container) {
-    display: none !important;
-  }
-
-  .print-container {
-    position: static !important;
-    display: block !important;
-    width: 100% !important;
-    height: auto !important;
-    min-height: 0 !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    background: #ffffff !important;
-    box-shadow: none !important;
-    border: none !important;
-  }
-
+  /* Pastikan elemen printable-content selalu tampil saat diprint */
   .printable-content {
     display: block !important;
+    visibility: visible !important;
     width: auto !important;
     max-width: 58mm !important;
     height: auto !important;
@@ -66,5 +49,9 @@
     break-after: avoid !important;
     page-break-inside: avoid !important;
     break-inside: avoid !important;
+  }
+
+  .printable-content * {
+    visibility: visible !important;
   }
 }
