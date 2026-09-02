@@ -7,15 +7,16 @@ const QueuePrint = forwardRef(({ queueData }, ref) => { // Gunakan forwardRef
   const theme = useContext(ThemeContext);
 
   return (
-    <div ref={ref} style={{ // Tambahkan ref di sini
+    <div ref={ref} className="printable-content" style={{ // Tambahkan ref di sini
       width: '52mm', // Mengurangi lebar agar ada margin
-      padding: '8px 6px', // Mengurangi padding
+      padding: '8px 6px 4px 6px', // Mengurangi padding
       fontFamily: 'monospace, "Courier New", Courier', // Font yang lebih konsisten untuk thermal
       fontSize: '11px',
       lineHeight: '1.3',
       color: '#000',
       background: 'white',
-      margin: '0 auto' // Center di preview
+      margin: '0 auto', // Center di preview
+      boxSizing: 'border-box'
     }}>
       {/* Header */}
       <div style={{ textAlign: 'center', marginBottom: '12px', borderBottom: '1px solid #000', paddingBottom: '8px' }}>

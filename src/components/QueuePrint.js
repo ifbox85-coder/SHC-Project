@@ -10,16 +10,17 @@ const QueuePrint = forwardRef(({ queueData }, ref) => {
   const address = theme?.address || 'Jl. Example No.123';
   
   return (
-    <div ref={ref} style={{
+    <div ref={ref} className="printable-content" style={{
       width: '50mm',
-      padding: '10px 5px',
+      padding: '8px 4px 4px 4px',
       fontFamily: 'monospace',
       fontSize: '10px',
       lineHeight: '1.2',
       color: '#000',
       background: 'white',
       margin: '0 auto',
-      textAlign: 'center'
+      textAlign: 'center',
+      boxSizing: 'border-box'
     }}>
       {/* Header - Seirama dengan Nota Kasir */}
       <div style={{ textAlign: 'center', marginBottom: '8px' }}>
