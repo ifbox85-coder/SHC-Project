@@ -4,6 +4,137 @@ import { ThemeContext } from '../App';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../configs/database';
 
+// Komponen Konten Struk (Disesuaikan untuk Blueprint 58D) - Didefinisikan di luar agar ref tidak ter-reset saat render
+const ThermalReceipt = forwardRef(({
+  theme,
+  selectedEncounter,
+  billingItems,
+  subTotal,
+  calculatedDiskon,
+  totalPPN,
+  isRoundingActive,
+  finalGrandTotal,
+  rawGrandTotal,
+  selisihBayar,
+  jumlahBayar,
+  paymentSuccess,
+  showPrintModal,
+  metodeBayar
+}, ref) => {
+  const receiptStyle = {
+    width: '52mm', // Beri sedikit margin untuk kertas 58mm
+    padding: '8px 4px 4px 4px',
+    fontFamily: 'monospace, "Courier New", Courier',
+    fontSize: '8pt', // Ukuran point lebih baik untuk cetak, 8pt biasanya ideal
+    lineHeight: '1.3', // Spasi baris lebih renggang agar tidak gepeng
+    color: '#000',
+    boxSizing: 'border-box',
+  };
+
+  if (!selectedEncounter) return null;
+
+  return (
+    <div ref={ref} className="bg-white text-black relative overflow-hidden printable-content" style={receiptStyle}>
+      {/* Watermark Background untuk Preview (Draft) - tidak ikut tercetak */}
+      {!paymentSuccess && !showPrintModal && (
+        <div className="absolute inset-0 pointer-events-none opacity-[0.08] flex flex-wrap justify-center content-center gap-2 rotate-[-25deg] select-none text-[10px] font-black uppercase leading-none">
+          {Array(60).fill("DRAFT NOTA PREVIEW ").map((txt, i) => (
+            <span key={i} className="whitespace-nowrap">{txt}</span>
+          ))}
+        </div>
+      )}
+      <div className="text-center mb-2">
+        <p className={`text-[9pt] font-bold border-b border-t border-black py-0.5 mb-1 uppercase ${paymentSuccess ? '' : 'italic'}`}>
+          {paymentSuccess ? "NOTA PEMBAYARAN" : "DRAFT TAGIHAN"}
+        </p>
+        {/* Logo Klinik */}
+        <img 
+          src={theme?.logo} 
+          alt="Logo" 
+          className="mx-auto h-12 w-auto mb-1 object-contain"
+          onError={(e) => e.target.style.display = 'none'}
+        />
+        <p className="font-bold text-[10pt] uppercase mt-1">{theme?.clinicName || 'CLINIC'}</p>
+        <p className="text-[7pt]">{theme?.address}</p>
+        <p className="text-[7pt]">Telp: 0812-XXXX-XXXX</p>
+      </div>
+
+      <div className="border-b border-dashed border-gray-400 my-1"></div>
+      
+      <div className="flex justify-between">
+        <span>Tgl : {new Date().toLocaleDateString('id-ID')}</span>
+        <span>{new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}</span>
+      </div>
+      <p>No  : {selectedEncounter.encounter_number}</p>
+      <p>Pas : {selectedEncounter.patients?.full_name?.substring(0, 15)}</p>
+      <p>Staff: {selectedEncounter.staff?.name?.substring(0, 15)}</p>
+
+      <div className="border-b border-dashed border-gray-400 my-1"></div>
+
+      <div className="space-y-1">
+        {(billingItems || []).map((item, idx) => (
+          <div key={idx}>
+            <p>{item.name}</p>
+            <div className="flex justify-between">
+              <span>1 x {Number(item.selling_price).toLocaleString()}</span>
+              <span>{Number(item.selling_price).toLocaleString()}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="border-b border-dashed border-gray-400 my-1"></div>
+
+      <div className="space-y-0.5">
+        <div className="flex justify-between">
+          <span>Subtotal</span>
+          <span>{subTotal?.toLocaleString()}</span>
+        </div>
+        {calculatedDiskon > 0 && (
+          <div className="flex justify-between">
+            <span>Diskon</span>
+            <span>-{calculatedDiskon.toLocaleString()}</span>
+          </div>
+        )}
+        {totalPPN > 0 && (
+          <div className="flex justify-between">
+            <span>PPN</span>
+            <span>{Math.round(totalPPN).toLocaleString()}</span>
+          </div>
+        )}
+        {isRoundingActive && (
+          <div className="flex justify-between italic">
+            <span>Pembulatan</span>
+            <span>{Math.round(finalGrandTotal - rawGrandTotal).toLocaleString()}</span>
+          </div>
+        )}
+        <div className="flex justify-between font-bold text-[10pt] pt-1">
+          <span>TOTAL</span>
+          <span>{finalGrandTotal?.toLocaleString()}</span>
+        </div>
+      </div>
+
+      <div className="border-b border-dashed border-gray-400 my-1"></div>
+
+      <div>
+        <div className="flex justify-between uppercase">
+          <span>{paymentSuccess ? metodeBayar : 'Rencana Bayar'}</span>
+          <span>{(Number(jumlahBayar) || 0).toLocaleString()}</span>
+        </div>
+        <div className="flex justify-between">
+          <span>{paymentSuccess ? (selisihBayar >= 0 ? 'Kembali' : 'Piutang') : 'Sisa Bayar'}</span>
+          <span>{paymentSuccess ? Math.abs(selisihBayar).toLocaleString() : (finalGrandTotal > (Number(jumlahBayar) || 0) ? (finalGrandTotal - (Number(jumlahBayar) || 0)).toLocaleString() : 0)}</span>
+        </div>
+      </div>
+
+      <div className="text-center mt-4 uppercase text-[7pt]">
+        <p>{theme?.footerNota || "*** TERIMA KASIH ***"}</p>
+        <p className="italic opacity-70">Layanan: SHC-System</p>
+      </div>
+    </div>
+  );
+});
+
 const Kasir = () => {
   const theme = useContext(ThemeContext);
   const printRef = useRef();
@@ -400,118 +531,7 @@ const Kasir = () => {
   // Kalkulasi Kembalian / Kurang Bayar
   const selisihBayar = (Number(jumlahBayar) || 0) - finalGrandTotal;
 
-  // Komponen Konten Struk (Disesuaikan untuk Blueprint 58D)
-  const ThermalReceipt = forwardRef((props, ref) => {
-    const receiptStyle = {
-      width: '52mm', // Beri sedikit margin untuk kertas 58mm
-      padding: '8px 4px 4px 4px',
-      fontFamily: 'monospace, "Courier New", Courier',
-      fontSize: '8pt', // Ukuran point lebih baik untuk cetak, 8pt biasanya ideal
-      lineHeight: '1.3', // Spasi baris lebih renggang agar tidak gepeng
-      color: '#000',
-      boxSizing: 'border-box',
-    };
-    return (
-    <div ref={ref} className="bg-white text-black relative overflow-hidden printable-content" style={receiptStyle}>
-      {/* Watermark Background untuk Preview (Draft) - tidak ikut tercetak */}
-      {!paymentSuccess && !showPrintModal && (
-        <div className="absolute inset-0 pointer-events-none opacity-[0.08] flex flex-wrap justify-center content-center gap-2 rotate-[-25deg] select-none text-[10px] font-black uppercase leading-none">
-          {Array(60).fill("DRAFT NOTA PREVIEW ").map((txt, i) => (
-            <span key={i} className="whitespace-nowrap">{txt}</span>
-          ))}
-        </div>
-      )}
-      <div className="text-center mb-2">
-        <p className={`text-[9pt] font-bold border-b border-t border-black py-0.5 mb-1 uppercase ${paymentSuccess ? '' : 'italic'}`}>
-          {paymentSuccess ? "NOTA PEMBAYARAN" : "DRAFT TAGIHAN"}
-        </p>
-        {/* Logo Klinik */}
-        <img 
-          src={theme.logo} 
-          alt="Logo" 
-          className="mx-auto h-12 w-auto mb-1 object-contain"
-          onError={(e) => e.target.style.display = 'none'}
-        />
-        <p className="font-bold text-[10pt] uppercase mt-1">{theme.clinicName}</p>
-        <p className="text-[7pt]">{theme.address}</p>
-        <p className="text-[7pt]">Telp: 0812-XXXX-XXXX</p>
-      </div>
 
-      <div className="border-b border-dashed border-gray-400 my-1"></div>
-      
-      <div className="flex justify-between">
-        <span>Tgl : {new Date().toLocaleDateString('id-ID')}</span>
-        <span>{new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}</span>
-      </div>
-      <p>No  : {selectedEncounter.encounter_number}</p>
-      <p>Pas : {selectedEncounter.patients?.full_name?.substring(0, 15)}</p>
-      <p>Staff: {selectedEncounter.staff?.name?.substring(0, 15)}</p>
-
-      <div className="border-b border-dashed border-gray-400 my-1"></div>
-
-      <div className="space-y-1">
-        {billingItems.map((item, idx) => (
-          <div key={idx}>
-            <p>{item.name}</p>
-            <div className="flex justify-between">
-              <span>1 x {Number(item.selling_price).toLocaleString()}</span>
-              <span>{Number(item.selling_price).toLocaleString()}</span>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <div className="border-b border-dashed border-gray-400 my-1"></div>
-
-      <div className="space-y-0.5">
-        <div className="flex justify-between">
-          <span>Subtotal</span>
-          <span>{subTotal.toLocaleString()}</span>
-        </div>
-        {calculatedDiskon > 0 && (
-          <div className="flex justify-between">
-            <span>Diskon</span>
-            <span>-{calculatedDiskon.toLocaleString()}</span>
-          </div>
-        )}
-        {totalPPN > 0 && (
-          <div className="flex justify-between">
-            <span>PPN</span>
-            <span>{Math.round(totalPPN).toLocaleString()}</span>
-          </div>
-        )}
-        {isRoundingActive && (
-          <div className="flex justify-between italic">
-            <span>Pembulatan</span>
-            <span>{Math.round(finalGrandTotal - rawGrandTotal).toLocaleString()}</span>
-          </div>
-        )}
-        <div className="flex justify-between font-bold text-[10pt] pt-1">
-          <span>TOTAL</span>
-          <span>{finalGrandTotal.toLocaleString()}</span>
-        </div>
-      </div>
-
-      <div className="border-b border-dashed border-gray-400 my-1"></div>
-
-      <div>
-        <div className="flex justify-between uppercase">
-          <span>{paymentSuccess ? metodeBayar : 'Rencana Bayar'}</span>
-          <span>{(Number(jumlahBayar) || 0).toLocaleString()}</span>
-        </div>
-        <div className="flex justify-between">
-          <span>{paymentSuccess ? (selisihBayar >= 0 ? 'Kembali' : 'Piutang') : 'Sisa Bayar'}</span>
-          <span>{paymentSuccess ? Math.abs(selisihBayar).toLocaleString() : (finalGrandTotal > (Number(jumlahBayar) || 0) ? (finalGrandTotal - (Number(jumlahBayar) || 0)).toLocaleString() : 0)}</span>
-        </div>
-      </div>
-
-      <div className="text-center mt-4 uppercase text-[7pt]">
-        <p>{theme.footerNota || "*** TERIMA KASIH ***"}</p>
-        <p className="italic opacity-70">Layanan: SHC-System</p>
-      </div>
-    </div>
-  );
-  });
 
   return (
     <>
@@ -741,9 +761,25 @@ const Kasir = () => {
         {showPrintModal && (
           <div className="fixed inset-0 bg-black bg-opacity-80 z-[100] flex flex-col items-center justify-start pt-10 p-4 no-print overflow-y-auto">
             <div className="bg-white rounded-lg overflow-hidden mb-4 shadow-2xl">
-              <ThermalReceipt ref={printRef} />
+              <ThermalReceipt 
+                ref={printRef}
+                theme={theme}
+                selectedEncounter={selectedEncounter}
+                billingItems={billingItems}
+                subTotal={subTotal}
+                calculatedDiskon={calculatedDiskon}
+                totalPPN={totalPPN}
+                isRoundingActive={isRoundingActive}
+                finalGrandTotal={finalGrandTotal}
+                rawGrandTotal={rawGrandTotal}
+                selisihBayar={selisihBayar}
+                jumlahBayar={jumlahBayar}
+                paymentSuccess={paymentSuccess}
+                showPrintModal={showPrintModal}
+                metodeBayar={metodeBayar}
+              />
             </div>
-            <div className="flex gap-3 w-full max-w-[58mm] no-print">
+            <div className="flex gap-3 w-full max-w-[58mm]">
               <button 
                 onClick={() => {
                   if (paymentSuccess) {
